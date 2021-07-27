@@ -125,3 +125,7 @@ void *func_liaotian(void *arg);
 void *func_liuyan(void *arg);
 //好友权限管理
 void *func_Friends_permissions(void *arg);
+//群选项Group options---[1]创建群 [2]解散群 [3]申请加群
+void *func_Group_options(void *arg);
+void *Group_create(void *arg);
+void *Group_disband(void *arg);

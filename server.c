@@ -137,9 +137,9 @@ int main()
             }
             else                //cfd们满足读事件，有客户端数据写来
             {
-                for(j=0;j<birth; j++)
-                    printf("%d ", clients[j]);
-                printf("\n");
+                // for(j=0;j<birth; j++)
+                //     printf("%d ", clients[j]);
+                // printf("\n");
 
                 j = 0;
                 flag = 0;
