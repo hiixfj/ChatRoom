@@ -123,3 +123,5 @@ void *func_zhaohui(void *arg);
 void *func_yonghu(void *arg);
 void *func_liaotian(void *arg);
 void *func_liuyan(void *arg);
+//好友权限管理
+void *func_Friends_permissions(void *arg);

@@ -274,6 +274,7 @@ void *func_yonghu(void *arg)
     int i, j;
     int choose;
     int flag;
+    int shield_flag;
 
     char query_str[BUFSIZ];
     char buf[BUFSIZ];
@@ -490,6 +491,30 @@ void *func_yonghu(void *arg)
                         {
                             strcpy(cm.tousername, row[1]);
                             
+                            //判断对方是否屏蔽自己
+                            shield_flag = 1;
+                            sprintf(query_str, "select num from %s where username = \"%s\"", \
+                                                                cm.tousername,    cm.username);
+                            MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+                            res2 = mysql_store_result(&cm.mysql);
+                            if(res2 == NULL)
+                            {
+                                my_err("mysql_store_result error", __LINE__);
+                            }
+                            while(row2 = mysql_fetch_row(res2))
+                            {
+                                if(atoi(row2[0]) == 0)
+                                {
+                                    strcpy(temp, "---对方已将你屏蔽\n");
+                                    Write(cm.cfd, temp);
+                                    shield_flag = 0;
+                                }
+                            }
+                            if(shield_flag == 0)
+                            {
+                                break;
+                            }
+
                             //判断对方是否在线
                             sprintf(query_str, "select status from UserData where username = \"%s\"", cm.tousername);
                             MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
@@ -584,6 +609,31 @@ void *func_yonghu(void *arg)
                 else if(flag == 0)
                 {
                     strcpy(cm.tousername, buf);
+
+                    //判断对方是否屏蔽自己
+                    shield_flag = 1;
+                    sprintf(query_str, "select num from %s where username = \"%s\"", \
+                                                        cm.tousername,    cm.username);
+                    MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+                    res2 = mysql_store_result(&cm.mysql);
+                    if(res2 == NULL)
+                    {
+                        my_err("mysql_store_result error", __LINE__);
+                    }
+                    while(row2 = mysql_fetch_row(res2))
+                    {
+                        if(atoi(row2[0]) == 0)
+                        {
+                            strcpy(temp, "---对方已将你屏蔽\n");
+                            Write(cm.cfd, temp);
+                            shield_flag = 0;
+                        }
+                    }
+                    if(shield_flag == 0)
+                    {
+                        continue;
+                    }
+
                     //判断对方是否在线
                     sprintf(query_str, "select status from UserData where username = \"%s\"", cm.tousername);
                     printf("%s\n", query_str);
@@ -709,6 +759,8 @@ void *func_liaotian(void *arg)
     MYSQL_ROW row, row2;
     MYSQL_RES *res, *res2;
 
+    pthread_t thid;
+
     int newsnum;
 
     char buf[BUFSIZ];
@@ -724,6 +776,17 @@ void *func_liaotian(void *arg)
     sprintf(temp, "------%s(\"quit-exit\" to quit)------\n", cm.tousername);
     Write(cm.cfd, temp);
     memset(temp, 0, sizeof(temp));
+    //给出好友选项参数
+    //-hisdata  查看消息记录
+    strcpy(temp, "------(-hisdata to view chat history)------\n");
+    Write(cm.cfd, temp);
+    memset(temp, 0, sizeof(temp));
+    //-Friends_permissions  管理好友权限
+    strcpy(temp, "------(-Friends_permissions to view chat history)------\n");
+    Write(cm.cfd, temp);
+    memset(temp, 0, sizeof(temp));
+
+
     //先把对方发送过来的未读消息全部打印出来
     sprintf(query_str, "select * from OffLineMes where touser = \"%s\"", cm.username);
     MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
@@ -753,8 +816,8 @@ void *func_liaotian(void *arg)
 
     //然后进入聊天
     //对方收到消息之后需要手动进入与自己的对话框才可以回复消息
-    printf("cm.cfd = %d\n", cm.cfd);
-    printf("cm.tocfd = %d\n", cm.tocfd);
+    // printf("cm.cfd = %d\n", cm.cfd);
+    // printf("cm.tocfd = %d\n", cm.tocfd);
     while(1)
     {
         Read(cm.cfd, buf, sizeof(buf), __LINE__);
@@ -762,8 +825,43 @@ void *func_liaotian(void *arg)
         {
             break;
         }
-        sprintf(temp, "<%s>-<%s>:%s", get_time(now_time), cm.tousername, buf);
+        else if(strcmp(buf, "-hisdata") == 0)
+        {
+            //显示出历史消息记录
+            sprintf(query_str, "select * from HisData \
+            where inuser = \"%s\" and touser = \"%s\" or inuser = \"%s\" and touser = \"%s\"", \
+                        cm.username, cm.tousername,                 cm.tousername, cm.username);
+            MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+            res = mysql_store_result(&cm.mysql);
+            if(res == NULL)
+            {
+                my_err("mysql_store_result error", __LINE__);
+            }
+            while(row = mysql_fetch_row(res))
+            {
+                sprintf(temp, "<%s>-<%s>-><%s>:%s\n", row[0], row[1], row[2], row[3]);
+                Write(cm.cfd, temp);
+            }
+            continue;
+        }
+        else if(strcmp(buf, "-Friends_permissions") == 0)   //好友权限管理
+        {
+            if(pthread_create(&thid, NULL, func_Friends_permissions, (void *)&cm) == -1)
+            {
+                my_err("pthread_create error", __LINE__);
+            }
+            pthread_join(thid, NULL);
+            continue;
+        }
+
+        sprintf(temp, "<%s>-<%s>:%s", get_time(now_time), cm.username, buf);
         Write(cm.tocfd, temp);
+
+        //将读到的内容加入聊天记录HisData中
+        sprintf(query_str, "insert into HisData values\
+        (\"%s\", \"%s\", \"%s\", \"%s\")", \
+        now_time, cm.username, cm.tousername, buf);
+        MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
     }
 
     pthread_exit(0);
@@ -803,6 +901,112 @@ void *func_liuyan(void *arg)
         sprintf(query_str, "update UserData set newsnum = \"%d\"", ++newsnum);
         MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
         memset(query_str, 0, sizeof(query_str));
+
+        //把消息加入聊天记录HisData中
+        sprintf(query_str, "insert into HisData values\
+        (\"%s\", \"%s\", \"%s\", \"%s\")", \
+        now_time, cm.username, cm.tousername, buf);
+        MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+    }
+
+    pthread_exit(0);
+}
+
+
+void *func_Friends_permissions(void *arg)
+{
+    struct cfd_mysql cm;
+    cm = *(struct cfd_mysql *)arg;
+
+    MYSQL_ROW row;
+    MYSQL_RES *res;
+
+    char temp[BUFSIZ];
+    char buf[BUFSIZ];
+    char query_str[BUFSIZ];
+
+
+    //先看看好友是否已被屏蔽
+    memset(query_str, 0, sizeof(query_str));
+    sprintf(query_str, "select num from %s where username = \"%s\"", \
+                                cm.username,            cm.tousername);
+    MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+    res = mysql_store_result(&cm.mysql);
+    if(res == NULL)
+    {
+        my_err("mysql_store_result error", __LINE__);
+    }
+    while(row = mysql_fetch_row(res))
+    {
+        if(atoi(row[0]) == 1)
+        {
+            while(1)
+            {
+                strcpy(temp, "[1] 屏蔽好友信息\n[2] 删除好友\n[q] 返回");
+                Write(cm.cfd, temp);
+                Read(cm.cfd, buf, sizeof(buf), __LINE__);
+                if(strcmp(buf, "1") == 0)
+                {
+                    memset(query_str, 0, sizeof(query_str));
+                    sprintf(query_str, "update %s set num = \"0\" where username = \"%s\"", \
+                                            cm.username,                       cm.tousername);
+                    MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+                    
+                    sprintf(temp, "---已屏蔽好友:%s\n", cm.tousername);
+                    Write(cm.cfd, temp);
+                }
+                else if(strcmp(buf, "2") == 0)
+                {
+                    memset(query_str, 0, sizeof(query_str));
+                    sprintf(query_str, "delete from %s where username = \"%s\"", \
+                                                    cm.username,    cm.tousername);
+                    MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+                    
+                    sprintf(temp, "---已删除好友:%s\n", cm.tousername);
+                    Write(cm.cfd, temp);
+                }
+                else if(strcmp(buf, "q") == 0)
+                {
+                    break;
+                }
+                else
+                {
+                    strcpy(temp, "---输入不合规范，请输入1/2/q\n");
+                    Write(cm.cfd, temp);
+                    continue;
+                }
+            }
+        }
+        else if(atoi(row[0]) == 0)
+        {
+            strcpy(temp, "[1] 屏蔽好友信息---解除\n[2] 删除好友\n[q] 返回\n");
+            Write(cm.cfd, temp);
+            Read(cm.cfd, buf, sizeof(buf), __LINE__);
+            if(strcmp(buf, "1") == 0)
+            {
+                memset(query_str, 0, sizeof(query_str));
+                sprintf(query_str, "update %s set num = \"1\" where username = \"%s\"", \
+                                        cm.username,                       cm.tousername);
+                MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+                
+                sprintf(temp, "---已解除屏蔽好友:%s\n", cm.tousername);
+                Write(cm.cfd, temp);
+            }
+            else if(strcmp(buf, "2") == 0)
+            {
+                memset(query_str, 0, sizeof(query_str));
+                sprintf(query_str, "delete from %s where username = \"%s\"", \
+                                                cm.username,    cm.tousername);
+                MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+                
+                sprintf(temp, "---已删除好友:%s\n", cm.tousername);
+                Write(cm.cfd, temp);
+            }
+            else if(strcmp(buf, "q") == 0)
+            {
+                break;
+            }
+        }
     }
 
     pthread_exit(0);
