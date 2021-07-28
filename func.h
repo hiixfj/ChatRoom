@@ -130,3 +130,6 @@ void *func_Group_options(void *arg);
 void *Group_create(void *arg);
 void *Group_disband(void *arg);
 void *Group_apply(void *arg);
+
+void *func_group_list(void *arg);
+void *Group_chat(void *arg);

@@ -738,7 +738,12 @@ void *func_yonghu(void *arg)
         }
         else if(strcmp(buf, "c") == 0)
         {
-
+            if(pthread_create(&thid, NULL, func_group_list, (void *)&cm) == -1)
+            {
+                my_err("pthread_create error", __LINE__);
+            }
+            pthread_join(thid, NULL);
+            continue;
         }
         else if(strcmp(buf, "d") == 0)
         {

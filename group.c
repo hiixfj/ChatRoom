@@ -374,3 +374,118 @@ void *Group_apply(void *arg)
 
     pthread_exit(0);
 }
+
+
+
+void *func_group_list(void *arg)
+{
+    struct cfd_mysql cm;
+    cm = *(struct cfd_mysql *)arg;
+
+    pthread_t thid;
+
+    MYSQL_ROW row;
+    MYSQL_RES *res;
+
+    int flag;
+    int group_flag;
+
+    char buf[BUFSIZ];
+    char temp[BUFSIZ];
+    char query_str[BUFSIZ];
+    char group_name[BUFSIZ];
+
+    while(1)
+    {
+        group_flag = 0;
+
+        strcpy(temp, "---输入群名称进入群聊(q to quit):");
+        Write(cm.cfd, temp);
+        //打印出自己加入的群聊
+        sprintf(query_str, "select * from %s \
+        where num = \"2\" or num = \"3\" or num = \"4\"", \
+                                        cm.username);
+        MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+        res = mysql_store_result(&cm.mysql);
+        if(res == NULL)
+        {
+            my_err("mysql_store_result error", __LINE__);
+        }
+        while(row = mysql_fetch_row(res))
+        {
+            sprintf(temp, "---<%s>", row[0]);
+            Write(cm.cfd, temp);
+        }
+
+        Read(cm.cfd, buf, sizeof(buf), __LINE__);
+        if(strcmp(buf, "q") == 0)
+        {
+            break;
+        }
+        
+        //判断输入是否正确
+        flag = mysql_repeat(&cm.mysql, "UserData", buf, 1);
+        if(flag == 0)
+        {
+            sprintf(query_str, "select status from UserData \
+            where username = \"%s\"", buf);
+            MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+            res = mysql_store_result(&cm.mysql);
+            if(res == NULL)
+            {
+                my_err("mysql_store_result error", __LINE__);
+            }
+            while(row = mysql_fetch_row(res))
+            {
+                if(atoi(row[0]) == 2)
+                {
+                    group_flag = 1;
+                }
+            }
+        }
+
+        if(group_flag == 0)
+        {
+            strcpy(temp, "---不存在此群\n");
+            Write(cm.cfd, temp);
+            continue;
+        }
+
+        //执行到这里说明输入正确的群名了
+        strcpy(group_name, buf);
+        strcpy(cm.tousername, buf);
+        //进入群聊界面
+        if(pthread_create(&thid, NULL, Group_chat, (void *)&cm) == -1)
+        {
+            my_err("pthread_create error", __LINE__);
+        }
+        pthread_join(thid, NULL);
+        continue;
+    }
+
+    pthread_exit(0);
+}
+
+void *Group_chat(void *arg)
+{
+    struct cfd_mysql cm;
+    cm = *(struct cfd_mysql *)arg;
+
+    pthread_t thid;
+
+    MYSQL_ROW row;
+    MYSQL_RES *res;
+
+    int flag;
+    int group_flag;
+
+    char buf[BUFSIZ];
+    char temp[BUFSIZ];
+    char query_str[BUFSIZ];
+    char group_name[BUFSIZ];
+
+    
+
+
+    pthread_exit(0);
+}
