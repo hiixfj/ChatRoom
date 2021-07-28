@@ -133,3 +133,16 @@ void *Group_apply(void *arg);
 
 void *func_group_list(void *arg);
 void *Group_chat(void *arg);
+//打印帮助菜单
+void Group_h(void *arg, int identity);
+//查看群成员，调用之前需要给cm.tousername赋值为群聊名
+void Group_view_member(void *arg);
+//退群线程
+//调用之前需要给cm.tousername赋值为群名，cm.tocfd赋值为identity
+void *Group_exit_group_chat(void *arg);
+//调用之前需要给cm.tousername赋值为群名，cm.tocfd赋值为identity
+void *Group_kick_member(void *arg);
+//把消息发送给除了自己的所有群成员
+//调用之前需要给cm.tousername赋值为群聊名称
+//参数type:可取值3 4 5
+void Group_broadcast(void *arg, char *q, int type);

@@ -1,17 +1,23 @@
 UserData:
+    password:
+        1  密码
+        2  群主名
+
     status:
         0  离线
         1  在线
         2  表示这个username是个群的名称
+
 
 OffLineMes:
     type:
         0  聊天
         1  加好友请求
         2  只读类消息
-        3  群只读类消息
+        3  群只读类消息(通知类消息)
         4  群聊天消息
         5  加群请求
+
 
 "username":
     num:
@@ -20,6 +26,7 @@ OffLineMes:
         2  群成员
         3  群管理员
         4  群主
+
 
 "Group":
     type:

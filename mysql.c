@@ -56,6 +56,22 @@ int mysql_inquire_newsnum(MYSQL *mysql, const char *username, int line)
     while(row = mysql_fetch_row(res))
         newsnum = atoi(row[0]);
     
+    //plus补全版
+    newsnum = 0;
+
+    sprintf(query_str, "select * from OffLineMes where touser = \"%s\"", username);
+    MY_real_query(mysql, query_str, strlen(query_str), __LINE__);
+    res = mysql_store_result(mysql);
+    if(res == NULL)
+    {
+        my_err("mysql_store_result error", __LINE__);
+    }
+    while(row = mysql_fetch_row(res))
+    {
+        newsnum++;
+    }
+    
+
     return newsnum;
 }
 
