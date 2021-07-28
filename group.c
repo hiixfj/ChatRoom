@@ -47,7 +47,12 @@ void *func_Group_options(void *arg)
         }
         else if(strcmp(buf, "3") == 0)
         {
-
+            if(pthread_create(&thid, NULL, Group_apply, (void *)&cm) == -1)
+            {
+                my_err("pthread_create error", __LINE__);
+            }
+            pthread_join(thid, NULL);
+            continue;
         }
         else if(strcmp(buf, "q") == 0)
         {
@@ -136,7 +141,12 @@ void *Group_create(void *arg)
 
         //将群主设置为自己
         sprintf(query_str, "insert into %s values\
-                    (\"%s\", \"2\")", cm.username);
+                    (\"%s\", \"2\")", buf, cm.username);
+        MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+
+        //将这个群加入到自己的好友列表中，并把type设置为4
+        sprintf(query_str, "insert into %s values \
+        (\"%s\", \"4\")", cm.username, buf);
         MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
 
         break;
@@ -161,6 +171,8 @@ void *Group_disband(void *arg)
     char buf[BUFSIZ];
     char temp[BUFSIZ];
     char query_str[BUFSIZ];
+    char group_name[BUFSIZ];
+    char now_time[BUFSIZ];
 
     memset(query_str, 0, sizeof(query_str));
     memset(buf, 0, sizeof(buf));
@@ -224,9 +236,140 @@ void *Group_disband(void *arg)
         if(flag == 0 && master_flag == 1)   //输入正确
         {
             sprintf(temp, "你确定要解散群<%s>？<y/n>\n", buf);
+            strcpy(group_name, buf);
             Write(cm.cfd, temp);
-            
+            Read(cm.cfd, buf, sizeof(buf), __LINE__);
+            if(strcmp(buf, "n") == 0)
+            {
+                strcpy(temp, "---解散群取消\n");
+                Write(cm.cfd, temp);
+                continue;
+            }
+            else if(strcmp(buf, "y") == 0)
+            {
+                //确认解散群
+                //<群主>-<群>s:该群已被群主解散
+                //向群内成员广播,type为(3)：群只读类消息
+                strcpy(temp, "该群已被群主解散");
+                sprintf(query_str, "insert into OffLineMes values \
+                (\"%s\", \"%s\", \"%s\", \"%s\", \"3\")", \
+                get_time(now_time), cm.username, group_name, temp);
+                MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+
+                //将该群在所有群成员的好友列表中移除
+                sprintf(query_str, "select * from %s", group_name);
+                MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+                res = mysql_store_result(&cm.mysql);
+                if(res == NULL)
+                {
+                    my_err("mysql_store_result error", __LINE__);
+                }
+                while(row = mysql_fetch_row(res))
+                {
+                    sprintf(query_str, "delete from %s where username = \"%s\"", \
+                                                    row[0],            group_name);
+                    MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+                }
+
+                //将群在UserData中移除
+                //将群在tables中移除
+                sprintf(query_str, "delete from UserData \
+                where username = \"%s\"", group_name);
+                MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+                
+                sprintf(query_str, "drop table %s", group_name);
+                MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+
+                sprintf(temp, "---已成功解散群<%s>", group_name);
+                Write(cm.cfd, temp);
+            }
+            else 
+            {
+                continue;
+            }
         }
+    }
+
+    pthread_exit(0);
+}
+
+void *Group_apply(void *arg)
+{
+    struct cfd_mysql cm;
+    cm = *(struct cfd_mysql *)arg;
+
+    pthread_t thid;
+
+    MYSQL_ROW row, row2;
+    MYSQL_RES *res, *res2;
+
+    int flag;
+    int confirm_flag;
+
+    char buf[BUFSIZ];
+    char temp[BUFSIZ];
+    char query_str[BUFSIZ];
+    char group_name[BUFSIZ];
+    char now_time[BUFSIZ];
+
+    strcpy(temp, "------申请加群------\n");
+    Write(cm.cfd, temp);
+
+    while(1)
+    {
+        confirm_flag = 0;
+
+        strcpy(temp, "---输入群名以发送加群申请(q to quit):");
+        Write(cm.cfd, temp);
+        Read(cm.cfd, buf, sizeof(buf), __LINE__);
+
+        if(strcmp(buf, "q") == 0)
+        {
+            break;
+        }
+        //先判断该名是否存在于UserData中
+        flag = mysql_repeat(&cm.mysql, "UserData", buf, 1);
+        if(flag == 1)
+        {
+            strcpy(temp, "---不存在此名\n");
+            Write(cm.cfd, temp);
+            continue;
+        }
+        strcpy(group_name, buf);
+        //然后判断该名的status是否为2
+        sprintf(query_str, "select status from UserData \
+        where username = \"%s\"", group_name);
+        MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+        res = mysql_store_result(&cm.mysql);
+        if(res == NULL)
+        {
+            my_err("mysql_store_result error", __LINE__);
+        }
+        while(row = mysql_fetch_row(res))
+        {
+            if(atoi(row[0]) == 2)       
+            {
+                confirm_flag = 1;
+            }
+        }
+        if(confirm_flag == 0)   //输入错误，输入为用户名
+        {
+            continue;
+        }
+
+        //执行到这里说明输入正确
+        //开始发送加群申请到OffLineMes
+        sprintf(temp, "%s：请求加入群聊：%s", cm.username, group_name);
+        sprintf(query_str, "insert into OffLineMes values \
+        (\"%s\", \"%s\", \"%s\", \"%s\", \"5\")", \
+        get_time(now_time), cm.username, group_name, temp);
+        MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+
+        strcpy(temp, "---加群请求发送成功，等待管理员审核\n");
+        Write(cm.cfd, temp);
+        
+        //申请加群流程走完，退出Group_apply线程
+        break;
     }
 
     pthread_exit(0);

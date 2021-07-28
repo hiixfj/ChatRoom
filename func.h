@@ -129,3 +129,4 @@ void *func_Friends_permissions(void *arg);
 void *func_Group_options(void *arg);
 void *Group_create(void *arg);
 void *Group_disband(void *arg);
+void *Group_apply(void *arg);
