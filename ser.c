@@ -298,9 +298,10 @@ void *func_yonghu(void *arg)
         Write(cm.cfd, temp);
         memset(temp, 0, sizeof(temp));
         //打印用户界面选项
-        strcpy(duff, "[a] 好友列表\n[b] 添加好友\n[c] 群列表\n[d] 群选项\n[e] 列表管理\n[s] 刷新列表\n[q] 退出登陆\n");
+        strcpy(duff, "[a] 好友列表\n[b] 添加好友\n[c] 群列表\n[d] 群选项\n[s] 刷新列表\n[q] 退出登陆\n");
         Write(cm.cfd, duff);
         Read(cm.cfd, buf, sizeof(buf), __LINE__);
+
         if(strcmp(buf, "v") == 0)
         {
             while(1)
@@ -331,6 +332,37 @@ void *func_yonghu(void *arg)
                     sprintf(temp, "[%d]-<%s>-(%s)---%s\n", i++, row[0], row[1], row[3]);
                     Write(cm.cfd, temp);
                 }
+                printf("%d\n", __LINE__);
+                //找到自己管理的群，然后在OffLineMes中找touser = 这个群的消息，然后给自己打印出来
+                sprintf(query_str, "select * from %s where num = \"3\" or num = \"4\"", cm.username);
+                MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+                res = mysql_store_result(&cm.mysql);
+                if(res == NULL)
+                {
+                    my_err("mysql_store_result error", __LINE__);
+                }
+                while(row = mysql_fetch_row(res))
+                {
+                    printf("%d\n", __LINE__);
+                    sprintf(query_str, "select * from OffLineMes \
+                                    where touser = \"%s\"", row[0]);
+                    MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+                    printf("%d\n", __LINE__);
+                    res2 = mysql_store_result(&cm.mysql);
+                    if(res2 == NULL)
+                    {
+                        my_err("mysql_store_result error", __LINE__);
+                    }
+                    while(row2 = mysql_fetch_row(res2))
+                    {
+                        printf("%d\n", __LINE__);
+                        sprintf(temp, "[%d]-<%s>-(%s)---%s", i++, row2[0], row2[1], row2[3]);
+                        Write(cm.cfd, temp);
+                        printf("%d\n", __LINE__);
+                    }
+                }
+                
+
                 Read(cm.cfd, buf, sizeof(buf), __LINE__);
                 if(strcmp(buf, "q") == 0)
                 {
@@ -515,8 +547,72 @@ void *func_yonghu(void *arg)
                                 break;
                             }
 
-                            //判断对方是否在线
-                            sprintf(query_str, "select status from UserData where username = \"%s\"", cm.tousername);
+                            if(pthread_create(&thid, NULL, func_private_chat, (void *)&cm) == -1)
+                            {
+                                my_err("pthread_create error", __LINE__);
+                            }
+                            pthread_join(thid, NULL);
+
+                            break;
+
+                            // //判断对方是否在线
+                            // sprintf(query_str, "select status from UserData where username = \"%s\"", cm.tousername);
+                            // MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+                            // res2 = mysql_store_result(&cm.mysql);
+                            // if(res2 == NULL)
+                            // {
+                            //     my_err("mysql_store_result error", __LINE__);
+                            // }
+                            // while(row2 = mysql_fetch_row(res2))
+                            // {
+                            //     if(atoi(row2[0]) == 0)
+                            //     {
+                            //         //进入留言线程
+                            //         if(pthread_create(&thid, NULL, func_liuyan, (void *)&cm) == -1)
+                            //         {
+                            //             my_err("pthread_create error", __LINE__);
+                            //         }
+                            //         pthread_join(thid, NULL);
+                            //     }
+                            //     else if(atoi(row2[0]) == 1)
+                            //     {
+                            //         //进入聊天线程
+                            //         if(pthread_create(&thid, NULL, func_liaotian, (void *)&cm) == -1)
+                            //         {
+                            //             my_err("pthread_create error", __LINE__);
+                            //         }
+                            //         pthread_join(thid, NULL);
+                            //     }
+                            // }
+
+                            // //更新自己的newsnum-1
+                            // newsnum = mysql_inquire_newsnum(&cm.mysql, cm.username, __LINE__);
+                            // sprintf(query_str, "update UserData set newsnum = %d where username = \"%s\"", \
+                            //                                                 --newsnum,          cm.username);
+                            // MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+
+                            // //将OffLineMes中---
+                            // //---关于inuser = cm.tousername and touser = cm.username and type = 0的消息删除
+                            // sprintf(query_str, "delete from OffLineMes \
+                            // where inuser = \"%s\" and touser = \"%s\" and type = 0", \
+                            //                 cm.tousername,      cm.username);
+                            // MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+
+
+                            // break;
+                        }
+                        else if(atoi(row[4]) == 3)  //群只读类消息
+                        {
+                            //从OffLineMes中移除这条消息
+                            sprintf(query_str, "delete from OffLineMes where time = \"%s\"", row[0]);
+                            MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+                            break;
+                        }
+                        else if(atoi(row[4]) == 4)  //群聊天消息
+                        {
+                            //通过消息的时间找到这个群聊的名称
+                            sprintf(query_str, "select * from HisData \
+                            where time = \"%s\"", row[0]);
                             MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
                             res2 = mysql_store_result(&cm.mysql);
                             if(res2 == NULL)
@@ -525,41 +621,151 @@ void *func_yonghu(void *arg)
                             }
                             while(row2 = mysql_fetch_row(res2))
                             {
-                                if(atoi(row2[0]) == 0)
-                                {
-                                    //进入留言线程
-                                    if(pthread_create(&thid, NULL, func_liuyan, (void *)&cm) == -1)
-                                    {
-                                        my_err("pthread_create error", __LINE__);
-                                    }
-                                    pthread_join(thid, NULL);
-                                }
-                                else if(atoi(row2[0]) == 1)
-                                {
-                                    //进入聊天线程
-                                    if(pthread_create(&thid, NULL, func_liaotian, (void *)&cm) == -1)
-                                    {
-                                        my_err("pthread_create error", __LINE__);
-                                    }
-                                    pthread_join(thid, NULL);
-                                }
+                                strcpy(cm.tousername, row2[2]);
                             }
-
-                            //更新自己的newsnum-1
-                            newsnum = mysql_inquire_newsnum(&cm.mysql, cm.username, __LINE__);
-                            sprintf(query_str, "update UserData set newsnum = %d where username = \"%s\"", \
-                                                                            --newsnum,          cm.username);
-                            MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
-
-                            //将OffLineMes中---
-                            //---关于inuser = cm.tousername and touser = cm.username and type = 0的消息删除
-                            sprintf(query_str, "delete from OffLineMes \
-                            where inuser = \"%s\" and touser = \"%s\" and type = 0", \
-                                            cm.tousername,      cm.username);
-                            MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
-
+                            
+                            //进入聊天界面
+                            if(pthread_create(&thid, NULL, Group_chat, (void *)&cm) == -1)
+                            {
+                                my_err("pthread_create error", __LINE__);
+                            }
+                            pthread_join(thid, NULL);
 
                             break;
+                        }
+                        else if(atoi(row[4]) == 5)  //加群请求
+                        {
+                            //基本上进不来
+                            //但还是写一写
+                            while(1)
+                            {
+                                strcpy(temp, "------同意(t)/拒绝(f)(q to quit)------\n");
+                                Write(cm.cfd, temp);
+                                Read(cm.cfd, buf, sizeof(buf), __LINE__);
+
+                                if(strcmp(buf, "t") == 0)
+                                {
+                                    //将对方加入"Group"表中，type = 0
+                                    sprintf(query_str, "insert into %s values \
+                                    (\"%s\", \"0\")", row[2], row[1]);
+                                    MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+
+                                    //把新成员加入群聊的消息广播给所有群成员
+                                    sprintf(temp, "<%s>-<%s>加入了群聊(%s)", row[0], row[1], row[2]);
+                                    strcpy(cm.tousername, row[2]);
+                                    Group_broadcast((void *)&cm, temp, 3);
+
+                                    //将这条消息从OffLineMes中抹去
+                                    sprintf(query_str, "delete from OffLineMes \
+                                                where time = \"%s\"", row[0]);
+                                    MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+
+                                    break;
+                                }
+                                else if(strcmp(buf, "f") == 0)
+                                {
+                                    //给发送请求的用户一个通知
+                                    sprintf(temp, "---<%s>:你的加群审核未通过", row[2]);
+                                    sprintf(query_str, "insert into OffLineMes values \
+                                    (\"%s\", \"%s\", \"%s\", \"%s\", \"3\")", \
+                                    get_time(now_time), row[2], row[1], temp);
+                                    MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+
+                                    //将这条消息从OffLineMes中移除
+                                    sprintf(query_str, "delete from OffLineMes where time = \"%s\"", row[0]);
+                                    MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+
+                                    break;
+                                }
+                                else if(strcmp(buf, "q") == 0)
+                                {
+                                    break;
+                                }
+                                else
+                                {
+                                    strcpy(temp, "---非法输入，请输入(t/f/q)---\n");
+                                    Write(cm.cfd, temp);
+                                    continue;
+                                }
+                            }
+                        }
+                    }
+                }
+                //上面的循环无法遍历到加群请求的消息
+                //由下面的循环再作遍历
+                sprintf(query_str, "select * from %s where num = \"3\" or num = \"4\"", cm.username);
+                MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+                res = mysql_store_result(&cm.mysql);
+                if(res == NULL)
+                {
+                    my_err("mysql_store_result error", __LINE__);
+                }
+                while(row = mysql_fetch_row(res))
+                {
+                    sprintf(query_str, "select * from OffLineMes \
+                                    where touser = \"%s\"", row[0]);
+                    MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+                    res2 = mysql_store_result(&cm.mysql);
+                    if(res2 == NULL)
+                    {
+                        my_err("mysql_store_result error", __LINE__);
+                    }
+                    while(row2 = mysql_fetch_row(res2))
+                    {
+                        //真正是从这里写入的
+                        if(j++ == choose)
+                        {
+                            while(1)
+                            {
+                                strcpy(temp, "------同意(t)/拒绝(f)(q to quit)------\n");
+                                Write(cm.cfd, temp);
+                                Read(cm.cfd, buf, sizeof(buf), __LINE__);
+
+                                if(strcmp(buf, "t") == 0)
+                                {
+                                    //将对方加入"Group"表中，type = 0
+                                    sprintf(query_str, "insert into %s values \
+                                    (\"%s\", \"0\")", row2[2], row2[1]);
+                                    MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+
+                                    //把新成员加入群聊的消息广播给所有群成员
+                                    sprintf(temp, "<%s>-<%s>加入了群聊(%s)", get_time(now_time), row2[1], row2[2]);
+                                    strcpy(cm.tousername, row2[2]);
+                                    Group_broadcast((void *)&cm, temp, 3);
+
+                                    //将这条消息从OffLineMes中抹去
+                                    sprintf(query_str, "delete from OffLineMes \
+                                                where time = \"%s\"", row2[0]);
+                                    MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+
+                                    break;
+                                }
+                                else if(strcmp(buf, "f") == 0)
+                                {
+                                    //给发送请求的用户一个通知
+                                    sprintf(temp, "---<%s>:你的加群审核未通过", row2[2]);
+                                    sprintf(query_str, "insert into OffLineMes values \
+                                    (\"%s\", \"%s\", \"%s\", \"%s\", \"3\")", \
+                                    get_time(now_time), row2[2], row2[1], temp);
+                                    MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+
+                                    //将这条消息从OffLineMes中移除
+                                    sprintf(query_str, "delete from OffLineMes where time = \"%s\"", row2[0]);
+                                    MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+
+                                    break;
+                                }
+                                else if(strcmp(buf, "q") == 0)
+                                {
+                                    break;
+                                }
+                                else
+                                {
+                                    strcpy(temp, "---非法输入，请输入(t/f/q)---\n");
+                                    Write(cm.cfd, temp);
+                                    continue;
+                                }
+                            }
                         }
                     }
                 }
@@ -571,7 +777,7 @@ void *func_yonghu(void *arg)
             {
                 //列出自己的好友
                 memset(query_str, 0, sizeof(query_str));
-                sprintf(query_str, "select * from %s", cm.username);
+                sprintf(query_str, "select * from %s where num = \"0\" or num = \"1\"", cm.username);
                 MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
                 res = mysql_store_result(&cm.mysql);
                 if(res == NULL)
@@ -648,38 +854,50 @@ void *func_yonghu(void *arg)
                         continue;
                     }
 
-                    //判断对方是否在线
-                    sprintf(query_str, "select status from UserData where username = \"%s\"", cm.tousername);
-                    printf("%s\n", query_str);
-                    MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
-                    res2 = mysql_store_result(&cm.mysql);
-                    if(res2 == NULL)
+                    //
+                    //由此进入聊天界面
+                    //每次发送的消息先由聊天线程处理判断是否是预设好的参数
+                    //如果不是的话，再把消息传给一个消息发送函数，专门用于发送数据
+                    if(pthread_create(&thid, NULL, func_private_chat, (void *)&cm) == -1)
                     {
-                        printf("%d:error:%s\n", __LINE__, mysql_error(&cm.mysql));
-                        my_err("mysql_store_result error", __LINE__);
+                        my_err("pthread_create error", __LINE__);
                     }
-                    while(row2 = mysql_fetch_row(res2))
-                    {
-                        if(atoi(row2[0]) == 0)
-                        {
-                            //进入留言线程
-                            if(pthread_create(&thid, NULL, func_liuyan, (void *)&cm) == -1)
-                            {
-                                my_err("pthread_create error", __LINE__);
-                            }
-                            pthread_join(thid, NULL);
-                        }
-                        else if(atoi(row2[0]) == 1)
-                        {
-                            //进入聊天线程
-                            if(pthread_create(&thid, NULL, func_liaotian, (void *)&cm) == -1)
-                            {
-                                my_err("pthread_create error", __LINE__);
-                            }
-                            pthread_join(thid, NULL);
-                        }
-                    }
-                    break;
+                    pthread_join(thid, NULL);
+                    continue;
+
+
+                    // //判断对方是否在线
+                    // sprintf(query_str, "select status from UserData where username = \"%s\"", cm.tousername);
+                    // printf("%s\n", query_str);
+                    // MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+                    // res2 = mysql_store_result(&cm.mysql);
+                    // if(res2 == NULL)
+                    // {
+                    //     printf("%d:error:%s\n", __LINE__, mysql_error(&cm.mysql));
+                    //     my_err("mysql_store_result error", __LINE__);
+                    // }
+                    // while(row2 = mysql_fetch_row(res2))
+                    // {
+                    //     if(atoi(row2[0]) == 0)
+                    //     {
+                    //         //进入留言线程
+                    //         if(pthread_create(&thid, NULL, func_liuyan, (void *)&cm) == -1)
+                    //         {
+                    //             my_err("pthread_create error", __LINE__);
+                    //         }
+                    //         pthread_join(thid, NULL);
+                    //     }
+                    //     else if(atoi(row2[0]) == 1)
+                    //     {
+                    //         //进入聊天线程
+                    //         if(pthread_create(&thid, NULL, func_liaotian, (void *)&cm) == -1)
+                    //         {
+                    //             my_err("pthread_create error", __LINE__);
+                    //         }
+                    //         pthread_join(thid, NULL);
+                    //     }
+                    // }
+                    // break;
                 }
             }
         }
@@ -752,10 +970,6 @@ void *func_yonghu(void *arg)
                 my_err("pthread_create error", __LINE__);
             }
             pthread_join(thid, NULL);
-        }
-        else if(strcmp(buf, "e") == 0)
-        {
-            
         }
         else if(strcmp(buf, "q") == 0)//
         {
@@ -979,6 +1193,183 @@ void *func_liuyan(void *arg)
     pthread_exit(0);
 }
 
+void *func_private_chat(void *arg)
+{
+    struct cfd_mysql cm;
+    cm = *(struct cfd_mysql *)arg;
+
+    MYSQL_ROW row, row2;
+    MYSQL_RES *res, *res2;
+
+    pthread_t thid;
+
+    int newsnum;
+
+    char buf[BUFSIZ];
+    char query_str[BUFSIZ];
+    char temp[BUFSIZ];
+    char now_time[BUFSIZ];
+    char friend[BUFSIZ];
+
+    memset(buf, 0, sizeof(buf));
+    memset(query_str, 0, sizeof(query_str));
+    memset(temp, 0, sizeof(temp));
+
+    strcpy(friend, cm.tousername);
+
+    Friendchat_h((void *)&cm);
+
+    //先把对方发来的未读消息全部打印出来
+    sprintf(query_str, "select * from OffLineMes \
+    where inuser = \"%s\" and touser = \"%s\" and type = \"0\"", friend, cm.username);
+    MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+    res = mysql_store_result(&cm.mysql);
+    if(res == NULL)
+    {
+        my_err("mysql_store_result error", __LINE__);
+    }
+    while(row = mysql_fetch_row(res))
+    {
+        sprintf(temp, "---<%s>-<%s>:%s", row[0], row[1], row[3]);
+        Write(cm.cfd, temp);
+
+        //将这条消息从OffLineMes中抹去
+        sprintf(query_str, "delete from OffLineMes where time = \"%s\"", row[0]);
+        MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+    }
+    strcpy(temp, "------(\"-h\" for help)------\n");
+    Write(cm.cfd, temp);
+    memset(temp, 0, sizeof(temp));
+
+    while(1)
+    {
+        Read(cm.cfd, buf, sizeof(buf), __LINE__);
+
+        if(strcmp(buf, "quit-exit") == 0)
+        {
+            break;
+        }
+        else if(strcmp(buf, "-hisdata") == 0)
+        {
+            sprintf(query_str, "select * from HisData \
+            where touser = \"%s\"", cm.username);
+            MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+            res = mysql_store_result(&cm.mysql);
+            if(res == NULL)
+            {
+                my_err("mysql_store_result error", __LINE__);
+            }
+            while(row = mysql_fetch_row(res))
+            {
+                sprintf(temp, "<%s>-<%s>:%s", row[0], row[1], row[3]);
+                Write(cm.cfd, temp);                
+            }
+
+            continue;
+        }
+        else if(strcmp(buf, "-Friends_permissions") == 0)
+        {
+            if(pthread_create(&thid, NULL, func_Friends_permissions, (void *)&cm) == 0)
+            {
+                my_err("pthread_create error", __LINE__);
+            }
+            pthread_join(thid, NULL);
+            continue;
+        }
+        else if(strcmp(buf, "-h") == 0)
+        {
+            Friendchat_h((void *)&cm);
+            continue;
+        }
+        else 
+        {
+            Friend_send_mes((void *)&cm, buf);
+            continue;
+        }
+
+    }
+
+    pthread_exit(0);
+}
+
+void Friend_send_mes(void *arg, char *q)
+{
+    struct cfd_mysql cm;
+    cm = *(struct cfd_mysql *)arg;
+
+    MYSQL_ROW row;
+    MYSQL_RES *res;
+
+    int status;
+
+    char temp[BUFSIZ];
+    char friend[BUFSIZ];
+    char buf[BUFSIZ];
+    char query_str[BUFSIZ];
+    char now_time[BUFSIZ];
+
+    strcpy(buf, q);
+    strcpy(friend, cm.tousername);
+
+    //把消息发送给friend之前，先判断是否在线，再选择发送方式
+    sprintf(query_str, "select * from UserData \
+            where username = \"%s\"", friend);
+    MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+    res = mysql_store_result(&cm.mysql);
+    if(res == NULL)
+    {
+        my_err("mysql_store_result error", __LINE__);
+    }
+    while(row = mysql_fetch_row(res))
+    {
+        status = atoi(row[5]);
+        cm.tocfd = atoi(row[6]);
+    }
+    if(status == 1)         //在线
+    {
+        //直接向对方的套接字发送消息
+        sprintf(temp, "<%s>-<%s>:%s", get_time(now_time), cm.username, buf);
+        Write(cm.tocfd, temp);
+    }
+    else if(status == 0)    //离线
+    {
+        //向OffLineMes中存入消息
+        sprintf(query_str, "insert into OffLineMes values\
+        (\"%s\", \"%s\", \"%s\", \"%s\", \"0\")", \
+        get_time(now_time), cm.username, friend, buf);
+        MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+    }
+    //把消息存入消息记录HisData中
+    sprintf(query_str, "insert into HisData values \
+    (\"%s\", \"%s\", \"%s\", \"%s\")", now_time, cm.username, friend, buf);
+    MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+
+}
+
+void Friendchat_h(void *arg)
+{
+    struct cfd_mysql cm;
+    cm = *(struct cfd_mysql *)arg;
+
+    char temp[BUFSIZ];
+
+    sprintf(temp, "------%s(\"quit-exit\" to quit)------\n", cm.tousername);
+    Write(cm.cfd, temp);
+    memset(temp, 0, sizeof(temp));
+    //给出好友选项参数
+    //-hisdata  查看消息记录
+    strcpy(temp, "------(\"-hisdata\" to view chat history)------\n");
+    Write(cm.cfd, temp);
+    memset(temp, 0, sizeof(temp));
+    //-Friends_permissions  管理好友权限
+    strcpy(temp, "------(\"-Friends_permissions\" to view chat history)------\n");
+    Write(cm.cfd, temp);
+    memset(temp, 0, sizeof(temp));
+    
+    strcpy(temp, "------(\"-h\" for help)------\n");
+    Write(cm.cfd, temp);
+    memset(temp, 0, sizeof(temp));
+}
 
 void *func_Friends_permissions(void *arg)
 {
@@ -1024,13 +1415,39 @@ void *func_Friends_permissions(void *arg)
                 }
                 else if(strcmp(buf, "2") == 0)
                 {
-                    memset(query_str, 0, sizeof(query_str));
-                    sprintf(query_str, "delete from %s where username = \"%s\"", \
-                                                    cm.username,    cm.tousername);
-                    MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
-                    
-                    sprintf(temp, "---已删除好友:%s\n", cm.tousername);
+                    sprintf(temp, "---你确定要删除好友<%s>吗?<y/n>", cm.tousername);
                     Write(cm.cfd, temp);
+                    Read(cm.cfd, buf, sizeof(buf), __LINE__);
+
+                    if(strcmp(buf, "y") == 0)
+                    {
+                        memset(query_str, 0, sizeof(query_str));
+                        sprintf(query_str, "delete from %s where username = \"%s\"", \
+                                                        cm.username,    cm.tousername);
+                        MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+                        
+                        sprintf(temp, "---已删除好友:%s\n", cm.tousername);
+                        Write(cm.cfd, temp);
+
+                        break;
+                    }
+                    else if(strcmp(buf, "n") == 0)
+                    {
+                        strcpy(temp, "---删除好友取消---\n");
+                        Write(cm.cfd, temp);
+
+                        continue;
+                    }
+                    else
+                    {
+                        strcpy(temp, "---非法输入---\n");
+                        Write(cm.cfd, temp);
+
+                        continue;
+                    }
+
+
+                    
                 }
                 else if(strcmp(buf, "q") == 0)
                 {

@@ -75,7 +75,7 @@ int main()
         }
     }
     num_birth += 1;
-    query_str = "update UserData set status = 0";
+    query_str = "update UserData set status = 0 where status = \"1\"";
     MY_real_query(&mysql, query_str, strlen(query_str), __LINE__);
     query_str = "update UserData set status = 1 where username = \"root\"";
     MY_real_query(&mysql, query_str, strlen(query_str), __LINE__);

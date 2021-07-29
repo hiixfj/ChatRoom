@@ -123,6 +123,10 @@ void *func_zhaohui(void *arg);
 void *func_yonghu(void *arg);
 void *func_liaotian(void *arg);
 void *func_liuyan(void *arg);
+//调用前需要给cm.tousername赋值为inuser
+void *func_private_chat(void *arg);
+void Friendchat_h(void *arg);
+void Friend_send_mes(void *arg, char *q);
 //好友权限管理
 void *func_Friends_permissions(void *arg);
 //群选项Group options---[1]创建群 [2]解散群 [3]申请加群
@@ -132,6 +136,7 @@ void *Group_disband(void *arg);
 void *Group_apply(void *arg);
 
 void *func_group_list(void *arg);
+//调用前需要给cm.tousername赋值为群聊名
 void *Group_chat(void *arg);
 //打印帮助菜单
 void Group_h(void *arg, int identity);

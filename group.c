@@ -452,9 +452,6 @@ void Group_broadcast(void *arg, char *q, int type)
     (\"%s\", \"%s\", \"%s\", \"%s\")", \
     now_time, cm.username, group_name, temp);
     MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
-
-
-    return NULL;
 }
 
 void *func_group_list(void *arg)
@@ -627,6 +624,7 @@ void *Group_chat(void *arg)
                 row[0], row[1], group_name, row[3]);
         Write(cm.cfd, temp);
         
+        //将这条消息从OffLineMes中抹去
         sprintf(query_str, "delete from OffLineMes \
         where time = \"%s\"", row[0]);
         MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
@@ -718,7 +716,7 @@ void *Group_chat(void *arg)
         }
         else    //发消息
         {
-            
+            Group_broadcast((void *)&cm, buf, 4);
         }
     }
 
@@ -1165,7 +1163,7 @@ void *Group_Set_revoke_admini(void *arg)
         {
             while(1)
             {
-                admini_num = Group_view_admini_num;
+                admini_num = Group_view_admini_num((void *)&cm);
                 if(admini_num <= 0)
                 {
                     strcpy(temp, "---本群暂无管理员---\n");
