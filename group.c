@@ -567,7 +567,7 @@ void Group_h(void *arg, int identity)
         strcpy(temp, "------(\"-kick_member\" to make member out of the group)------\n");
         Write(cm.cfd, temp);
 
-        strcpy(temp, "------(\"-Set_up_administrator\" to set up an administrator)------\n");
+        strcpy(temp, "------(\"-Set_revoke_administrator\" to set or revoke an administrator)------\n");
         Write(cm.cfd, temp);
     }
     //打印参数
@@ -701,9 +701,15 @@ void *Group_chat(void *arg)
             pthread_join(thid, NULL);
             continue;
         }
-        else if(strcmp(buf, "-Set_up_administrator") == 0)
+        else if(strcmp(buf, "-Set_revoke_administrator") == 0)
         {
-
+            cm.tocfd = identity;
+            if(pthread_create(&thid, NULL, Group_Set_revoke_admini, (void *)&cm) == -1)
+            {
+                my_err("pthread_create error", __LINE__);
+            }
+            pthread_join(thid, NULL);
+            continue;
         }
         else if(strcmp(buf, "-h") == 0)
         {
@@ -712,7 +718,7 @@ void *Group_chat(void *arg)
         }
         else    //发消息
         {
-
+            
         }
     }
 
@@ -936,6 +942,7 @@ void *Group_kick_member(void *arg)
     int flag;
     int group_flag;
     int identity;
+    int to_identity;
 
     char buf[BUFSIZ];
     char temp[BUFSIZ];
@@ -984,7 +991,30 @@ void *Group_kick_member(void *arg)
             Read(cm.cfd, buf, sizeof(buf), __LINE__);
             if(strcmp(buf, "y") == 0)
             {
-                
+                //再判断级别是否足够
+                sprintf(query_str, "select status from UserData where username = \"%s\"", member_name);
+                MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+                res = mysql_store_result(&cm.mysql);
+                if(res == NULL)
+                {
+                    my_err("mysql_store_result error", __LINE__);
+                }
+                while(row = mysql_fetch_row(res))
+                {
+                    to_identity = atoi(row[0]);
+                }
+                if(identity <= to_identity)
+                {
+                    sprintf(temp, "---权限不足，踢出<%s>失败---\n", member_name);
+                    Write(cm.cfd, temp);
+                    break;
+                }   
+
+                //把member_name从Group_name中移除
+                sprintf(query_str, "delete from %s where username = \"%s\"", \
+                                            group_name,           member_name);
+                MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+
             }
             else if(strcmp(buf, "n") == 0)
             {
@@ -1002,4 +1032,253 @@ void *Group_kick_member(void *arg)
     }
 
     pthread_exit(0);
+}
+
+void *Group_Set_revoke_admini(void *arg)
+{
+    struct cfd_mysql cm;
+    cm = *(struct cfd_mysql *)arg;
+
+    pthread_t thid;
+
+    MYSQL_ROW row;
+    MYSQL_RES *res;
+
+    int flag;
+    int group_flag;
+    int identity;
+    int to_identity;
+    int admini_num;
+
+    char buf[BUFSIZ];
+    char temp[BUFSIZ];
+    char query_str[BUFSIZ];
+    char group_name[BUFSIZ];
+    char member_name[BUFSIZ];
+
+    identity = cm.tocfd;
+    strcpy(group_name, cm.tousername);
+
+
+    while(1)
+    {
+        if(identity != 2)
+        {
+            strcpy(temp, "---你没有设置或撤销群管理员的权限---\n");
+            Write(cm.cfd, temp);
+            break;
+        }
+
+        //打印出当前的群管理员人数(*/10)
+        admini_num = Group_view_admini_num((void *)&cm);
+        sprintf(temp, "---管理员(%d/10)---\n", admini_num);
+        Write(cm.cfd, temp);
+
+        strcpy(temp, "---你想要(设置)/(撤销)管理员-(s/r/q):");
+        Write(cm.cfd, temp);
+        Read(cm.cfd, buf, sizeof(buf), __LINE__);
+        if(strcmp(buf, "q") == 0)
+        {
+            strcpy(temp, "---管理群管理员取消---\n");
+            Write(cm.cfd, temp);
+
+            break;
+        }
+        else if(strcmp(buf, "s") == 0)  //设置管理员
+        {
+            while(1)
+            {
+                admini_num = Group_view_admini_num((void *)&cm);
+                if(admini_num >= 10)
+                {
+                    strcpy(temp, "---群管理员人数已达上限---\n");
+                    Write(cm.cfd, temp);
+
+                    break;
+                }   
+
+                //打印出群成员
+                Group_view_member((void *)&cm);
+
+                strcpy(temp, "---输入群成员名称以设置管理员(q to quit):");
+                Write(cm.cfd, temp);
+                Read(cm.cfd, buf, sizeof(buf), __LINE__);
+                if(strcmp(buf, "q") == 0)
+                {
+                    strcpy(temp, "---设置群成员取消---\n");
+                    Write(cm.cfd, temp);
+
+                    break;
+                }
+
+                flag = mysql_repeat(&cm.mysql, group_name, buf, 1);
+                if(flag == 1)
+                {
+                    strcpy(temp, "---用户名输入错误，群内不存在此用户\n");
+                    Write(cm.cfd, temp);
+                    continue;
+                }
+
+                strcpy(member_name, buf);
+                //获得这个人的身份
+                sprintf(query_str, "select status from %s where username = \"%s\"", \
+                                                    group_name,          member_name);
+                MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+                res = mysql_store_result(&cm.mysql);
+                if(res == NULL)
+                {
+                    my_err("mysql_store_result error", __LINE__);
+                }
+                while(row = mysql_fetch_row(res))
+                {
+                    to_identity = atoi(row[0]);
+                }
+                if(to_identity == 1)
+                {
+                    sprintf(temp, "---<%s>已经是管理员---\n", member_name);
+                    Write(cm.cfd, temp);
+
+                    continue;
+                }
+                else if(to_identity == 2)
+                {
+                    strcpy(temp, "---你不可以设置自己为管理员---\n");
+                    Write(cm.cfd, temp);
+
+                    continue;
+                }
+                else if(to_identity == 0)
+                {
+                    //把member_name设置为type = 1
+                    sprintf(query_str, "update %s set type = \"1\" where username = \"%s\"", \
+                                            group_name,                         member_name);
+                    MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+
+                    sprintf(temp, "---<%s>成为新的管理员\n", member_name);
+                    Write(cm.cfd, temp);
+
+                    continue;
+                }
+            }
+        }
+        else if(strcmp(buf, "r") == 0)  //撤销管理员
+        {
+            while(1)
+            {
+                admini_num = Group_view_admini_num;
+                if(admini_num <= 0)
+                {
+                    strcpy(temp, "---本群暂无管理员---\n");
+                    Write(cm.cfd, temp);
+
+                    break;
+                }
+
+                //打印出群成员
+                Group_view_member((void *)&cm);
+
+                strcpy(temp, "---请输入群管理员昵称以撤销(q to quit):");
+                Write(cm.cfd, temp);
+                Read(cm.cfd, buf, sizeof(buf), __LINE__);
+                if(strcmp(buf, "q") == 0)
+                {
+                    strcpy(temp, "---取消撤销管理员---\n");
+                    Write(cm.cfd, temp);
+                    break;
+                }
+
+                flag = mysql_repeat(&cm.mysql, group_name, buf, 1);
+                if(flag == 1)
+                {
+                    strcpy(temp, "---输入错误，群内没有此成员---\n");
+                    Write(cm.cfd, temp);
+
+                    continue;
+                }
+                strcpy(member_name, buf);
+                //判断member_name是否是管理员
+                sprintf(query_str, "select type from %s where username = \"%s\"", \
+                                                    group_name,         member_name);
+                MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+                res = mysql_store_result(&cm.mysql);
+                if(res == NULL)
+                {
+                    my_err("mysql_store_result error", __LINE__);
+                }
+                while(row = mysql_fetch_row(res))
+                {
+                    to_identity = atoi(row[0]);
+                }
+                if(to_identity == 2)
+                {
+                    strcpy(temp, "---你不能撤销自己的群主---\n");
+                    Write(cm.cfd, temp);
+
+                    continue;
+                }
+                else if(to_identity == 1)
+                {
+                    //将Group_name里member_name的type改称0
+                    sprintf(query_str, "update %s set type = \"0\" where username = \"%s\"", \
+                                            group_name,                           member_name);
+                    MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+
+                    sprintf(temp, "---<%s>已被设置为管理员---\n");
+                    Write(cm.cfd, temp);
+                    
+                    continue;
+                }
+                else if(to_identity == 0)
+                {
+                    strcpy(temp, "---<%s>不是管理员---\n");
+                    Write(cm.cfd, temp);
+
+                    continue;
+                }
+            }
+        }
+        else
+        {
+            strcpy(temp, "---非法输入，请输入(s/r/q)---\n");
+            Write(cm.cfd, temp);
+
+            continue;
+        }
+        
+    }
+
+    pthread_exit(0);
+}
+
+int Group_view_admini_num(void *arg)
+{
+    struct cfd_mysql cm;
+    cm = *(struct cfd_mysql *)arg;
+
+    pthread_t thid;
+
+    MYSQL_ROW row;
+    MYSQL_RES *res;
+
+    int admini_num; 
+
+    char query_str[BUFSIZ];
+    char group_name[BUFSIZ];
+
+    strcpy(group_name, cm.tousername);
+
+    sprintf(query_str, "select * from %s where type = \"1\"", group_name);
+    MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+    res = mysql_store_result(&cm.mysql);
+    if(res == NULL)
+    {
+        my_err("mysql_store_result error", __LINE__);
+    }
+    admini_num = 0;
+    while(row = mysql_fetch_row(res))
+    {
+        admini_num++;
+    }
+
+    return admini_num;
 }
