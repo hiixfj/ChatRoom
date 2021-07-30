@@ -11,9 +11,8 @@ char *get_time(char now_time[BUFSIZ])
 	now_time[strlen(now_time)-1] = '\0';
 
 	char temp[BUFSIZ];
-	// memset(temp, 0, sizeof(temp));
 	strcpy(temp, now_time);
-	write(STDOUT_FILENO, temp, sizeof(temp));
+	// write(STDOUT_FILENO, temp, sizeof(temp));
 }
 
 int main()
@@ -22,7 +21,7 @@ int main()
 
     get_time(now_time);
 
-    // printf("%s\n", now_time);
+    printf("now is = %s\n", now_time);
     
 
     return 0;

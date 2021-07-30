@@ -332,7 +332,6 @@ void *func_yonghu(void *arg)
                     sprintf(temp, "[%d]-<%s>-(%s)---%s\n", i++, row[0], row[1], row[3]);
                     Write(cm.cfd, temp);
                 }
-                printf("%d\n", __LINE__);
                 //找到自己管理的群，然后在OffLineMes中找touser = 这个群的消息，然后给自己打印出来
                 sprintf(query_str, "select * from %s where num = \"3\" or num = \"4\"", cm.username);
                 MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
@@ -343,11 +342,9 @@ void *func_yonghu(void *arg)
                 }
                 while(row = mysql_fetch_row(res))
                 {
-                    printf("%d\n", __LINE__);
                     sprintf(query_str, "select * from OffLineMes \
                                     where touser = \"%s\"", row[0]);
                     MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
-                    printf("%d\n", __LINE__);
                     res2 = mysql_store_result(&cm.mysql);
                     if(res2 == NULL)
                     {
@@ -355,10 +352,8 @@ void *func_yonghu(void *arg)
                     }
                     while(row2 = mysql_fetch_row(res2))
                     {
-                        printf("%d\n", __LINE__);
                         sprintf(temp, "[%d]-<%s>-(%s)---%s", i++, row2[0], row2[1], row2[3]);
                         Write(cm.cfd, temp);
-                        printf("%d\n", __LINE__);
                     }
                 }
                 
@@ -723,9 +718,18 @@ void *func_yonghu(void *arg)
 
                                 if(strcmp(buf, "t") == 0)
                                 {
+                                    //给自己一个反馈
+                                    sprintf(temp, "---已接受<%s>的加群请求---\n", row2[1]);
+                                    Write(cm.cfd, temp);
+
                                     //将对方加入"Group"表中，type = 0
                                     sprintf(query_str, "insert into %s values \
                                     (\"%s\", \"0\")", row2[2], row2[1]);
+                                    MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+
+                                    //把群聊名加入对方的表中
+                                    sprintf(query_str, "insert into %s values \
+                                    (\"%s\", \"2\")", row2[1], row2[2]);
                                     MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
 
                                     //把新成员加入群聊的消息广播给所有群成员
@@ -742,6 +746,10 @@ void *func_yonghu(void *arg)
                                 }
                                 else if(strcmp(buf, "f") == 0)
                                 {
+                                    //给自己一个反馈
+                                    sprintf(temp, "---已拒绝<%s>的加群请求---\n", row2[1]);
+                                    Write(cm.cfd, temp);
+
                                     //给发送请求的用户一个通知
                                     sprintf(temp, "---<%s>:你的加群审核未通过", row2[2]);
                                     sprintf(query_str, "insert into OffLineMes values \

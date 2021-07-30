@@ -425,7 +425,7 @@ void Group_broadcast(void *arg, char *q, int type)
         }
         while(row2 = mysql_fetch_row(res2))
         {
-            if(strcmp(row2[0], row[0]) != 0)
+            if(strcmp(row2[0], cm.username) != 0)
             {
                 if(atoi(row2[5]) == 1)      //群成员在线的话，直接向对方的套接字发送内容
                 {
@@ -644,12 +644,12 @@ void *Group_chat(void *arg)
         identity = atoi(row[1]);
     }
 
+    //打印帮助菜单
+    Group_h((void *)&cm, identity);
+
     //输入消息
     while(1)
-    {
-        //打印帮助菜单
-        Group_h((void *)&cm, identity);
-        
+    {   
         Read(cm.cfd, buf, sizeof(buf), __LINE__);
         if(strcmp(buf, "quit-exit") == 0)
         {
