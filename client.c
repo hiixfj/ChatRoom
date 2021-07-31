@@ -140,10 +140,51 @@ void *my_read(void *arg)
 
 
 
-int main()
+int main(int argc, char **argv)
 {
-    int cfd;
+    //检查参数个数
+    if(argc != 5)
+    {
+        printf("Usage: [-p] [serv_port] [-a] [serve_address]\n");
+        exit(1);
+    }
+    int i;
+    int serv_port;
     struct sockaddr_in serv_addr;
+
+    serv_addr.sin_family = AF_INET;
+    // serv_addr.sin_port = htons(SERV_PORT);
+    // inet_aton("127.0.0.1", &serv_addr.sin_addr);
+    //从命令行的输入获取服务器端的端口与地址
+    for(i=1; i<argc; i++)
+    {
+        if(strcmp(argv[i], "-p") == 0)
+        {
+            serv_port = atoi(argv[i+1]);
+            if(serv_port < 0 || serv_port > 65535)
+            {
+                printf("Invalid serv_addr.sin_port\n");
+                exit(1);
+            }
+            else
+            {
+                serv_addr.sin_port = htons(serv_port);
+            }
+            continue;
+        }
+
+        if(strcmp(argv[i], "-a") == 0)
+        {
+            if(inet_aton(argv[i+1], &serv_addr.sin_addr) == 0)
+            {
+                printf("Invalid server ip address\n");
+                exit(1);
+            }
+            continue;
+        }
+    }
+
+    int cfd;
     char buf[BUFSIZ];
     int len;
 
@@ -154,9 +195,6 @@ int main()
     if(cfd == -1)
         my_err("socket error", __LINE__);
 
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(SERV_PORT);
-    inet_aton("127.0.0.1", &serv_addr.sin_addr);
     if(connect(cfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) == -1)
         my_err("connect error", __LINE__);
     
