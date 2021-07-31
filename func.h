@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <netinet/in.h>
@@ -11,9 +12,13 @@
 #include <sys/epoll.h>
 #include <mysql/mysql.h>
 #include <pthread.h>
+#include <libgen.h>
+#include <sys/sendfile.h>
+#include <fcntl.h>
 #include "time.h"
 
 #define MAXEVE 1024
+#define MAX_LINE 4096
 
 struct cfd_mysql
 {
@@ -29,11 +34,11 @@ struct cfd_mysql
 //每来一个用户就新建一个线程来这里
 void *serv_new_client(void *arg);
 
+void *recv_file(void *arg);
 
+void Sendfile(FILE *fp, int sockfd);
 
-
-
-
+void Writefile(int sockfd, FILE *fp);
 
 
 
@@ -127,6 +132,10 @@ void *func_liuyan(void *arg);
 void *func_private_chat(void *arg);
 void Friendchat_h(void *arg);
 void Friend_send_mes(void *arg, char *q);
+//需要给cm.tousername赋值
+void *func_Friend_send_file(void *arg);
+//需要给cm.tousername赋值
+void *func_Friend_recv_file(void *arg);
 //好友权限管理
 void *func_Friends_permissions(void *arg);
 //群选项Group options---[1]创建群 [2]解散群 [3]申请加群

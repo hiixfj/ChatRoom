@@ -1,4 +1,11 @@
 #include "func.h"
+#include <libgen.h>
+
+struct test
+{
+	int len;
+	char name[BUFSIZ];
+};
 
 char *get_time(char now_time[BUFSIZ])
 {
@@ -17,12 +24,12 @@ char *get_time(char now_time[BUFSIZ])
 
 int main()
 {
-    char now_time[BUFSIZ];
+    char buf[BUFSIZ];
+	int temp = 111;
 
-    get_time(now_time);
+	sprintf(buf, "%d", temp);
 
-    printf("now is = %s\n", now_time);
-    
+	printf("%s\n", buf);
 
     return 0;
 }

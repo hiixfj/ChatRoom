@@ -79,6 +79,10 @@ void *serv_new_client(void *arg)
                         printf("%d:error:%s", __LINE__, mysql_error(&cm.mysql));
                         my_err("mysql_real_query error", __LINE__);
                     }
+                    //登陆成功时，把当前的cfd更新至UserData中
+                    sprintf(query_str, "update UserData set cfd = %d where username = \"%s\"", cm.cfd, username);
+                    MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+
                     strcpy(cm.username, username);
                     if(pthread_create(&thid, NULL, func_yonghu, (void *)&cm) == -1)
                     {
@@ -328,6 +332,14 @@ void *func_yonghu(void *arg)
                 }
                 while(row = mysql_fetch_row(res))
                 {
+                    if(atoi(row[4]) == 6)
+                    {
+                        memset(temp, 0, sizeof(temp));
+                        sprintf(temp, "[%d]-<%s>-(%s)发送来了文件:%s", i++, row[0], row[1], row[3]);
+                        Write(cm.cfd, temp);
+
+                        continue;
+                    }
                     memset(temp, 0, sizeof(temp));
                     sprintf(temp, "[%d]-<%s>-(%s)---%s\n", i++, row[0], row[1], row[3]);
                     Write(cm.cfd, temp);
@@ -680,6 +692,82 @@ void *func_yonghu(void *arg)
                                 {
                                     strcpy(temp, "---非法输入，请输入(t/f/q)---\n");
                                     Write(cm.cfd, temp);
+                                    continue;
+                                }
+                            }
+                        }
+                        else if(atoi(row[4]) == 6)  //发文件请求
+                        {
+                            while(1)
+                            {
+                                strcpy(temp, "---同意(t)/拒绝(f)(q to quit)---");
+                                Write(cm.cfd, temp);
+                                Read(cm.cfd, buf, sizeof(buf), __LINE__);
+                                if(strcmp(buf, "q") == 0)
+                                {
+                                    break;       
+                                }
+                                else if(strcmp(buf, "t") == 0)
+                                {
+                                    //把文件名赋值给cm.tousername
+                                    strcpy(cm.tousername, row[3]);
+                                    if(pthread_create(&thid, NULL, func_Friend_recv_file, (void *)&cm) == -1)
+                                    {
+                                        my_err("pthread_create error", __LINE__);
+                                    }
+                                    pthread_join(thid, NULL);
+
+                                    //给自己一个反馈
+                                    sprintf(temp, "---成功接收文件<%s>\n", row[3]);
+                                    Write(cm.cfd, temp);
+
+                                    //给对方一个反馈
+                                    sprintf(temp, "<%s>接收了文件<%s>", cm.username, row[3]);
+                                    sprintf(query_str, "insert into OffLineMes values \
+                                    (\"%s\", \"%s\", \"%s\", \"%s\", \"2\")", \
+                                    get_time(now_time), cm.username, row[1], temp);
+                                    MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+
+                                    //把这条信息从OffLineMes中抹去
+                                    sprintf(query_str, "delete from OffLineMes \
+                                    where time = \"%s\"", row[0]);
+                                    MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+
+                                    break;
+                                }
+                                else if(strcmp(buf, "f") == 0)
+                                {
+                                    //给自己一个反馈
+                                    sprintf(temp, "---拒绝接收文件%s\n", row[3]);
+                                    Write(cm.cfd, temp);
+
+                                    //给对方一个反馈
+                                    sprintf(temp, "<%s>拒绝接收文件<%s>", cm.username, row[3]);
+                                    sprintf(query_str, "insert into OffLineMes values \
+                                    (\"%s\", \"%s\", \"%s\", \"%s\", \"2\")", \
+                                    get_time(now_time), cm.username, row[1], temp);
+                                    MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+
+                                    //在系统的文件缓存区中删除这个文件
+                                    sprintf(temp, "./file_buf/%s", row[3]);
+                                    if(unlink(temp) < 0)
+                                    {
+                                        my_err("unlink error", __LINE__);
+                                    }
+                                    printf("file:%s:unlinked\n", row[3]);
+
+                                    //从OffLineMes中抹去这条消息
+                                    sprintf(query_str, "delete from OffLineMes \
+                                    where time = \"%s\"", row[0]);
+                                    MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+
+                                    break;
+                                }
+                                else
+                                {
+                                    strcpy(temp, "---非法输入---\n");
+                                    Write(cm.cfd, temp);
+                                    
                                     continue;
                                 }
                             }
@@ -1289,6 +1377,16 @@ void *func_private_chat(void *arg)
             Friendchat_h((void *)&cm);
             continue;
         }
+        else if(strcmp(buf, "-send_file") == 0)
+        {
+            //进入发文件线程
+            if(pthread_create(&thid, NULL, func_Friend_send_file, (void *)&cm) == -1)
+            {
+                my_err("pthread_create error", __LINE__);
+            }
+            pthread_join(thid, NULL);
+            continue;
+        }
         else 
         {
             Friend_send_mes((void *)&cm, buf);
@@ -1345,11 +1443,13 @@ void Friend_send_mes(void *arg, char *q)
         sprintf(query_str, "insert into OffLineMes values\
         (\"%s\", \"%s\", \"%s\", \"%s\", \"0\")", \
         get_time(now_time), cm.username, friend, buf);
+        printf("%s\n", query_str);
         MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
     }
     //把消息存入消息记录HisData中
     sprintf(query_str, "insert into HisData values \
     (\"%s\", \"%s\", \"%s\", \"%s\")", now_time, cm.username, friend, buf);
+    printf("%s\n", query_str);
     MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
 
 }
@@ -1365,6 +1465,8 @@ void Friendchat_h(void *arg)
     Write(cm.cfd, temp);
     memset(temp, 0, sizeof(temp));
     //给出好友选项参数
+    strcpy(temp, "------(\"-send_file\" to send file)------\n");
+    Write(cm.cfd, temp);
     //-hisdata  查看消息记录
     strcpy(temp, "------(\"-hisdata\" to view chat history)------\n");
     Write(cm.cfd, temp);
@@ -1501,6 +1603,154 @@ void *func_Friends_permissions(void *arg)
                     break;
                 }
             }
+        }
+    }
+
+    pthread_exit(0);
+}
+
+void *func_Friend_send_file(void *arg)
+{
+    struct cfd_mysql cm;
+    cm = *(struct cfd_mysql *)arg;
+
+    MYSQL_ROW row;
+    MYSQL_RES *res;
+
+    pthread_t thid;
+
+    char temp[BUFSIZ];
+    char buf[BUFSIZ];
+    char query_str[BUFSIZ];
+    char now_time[BUFSIZ];
+    char friend[BUFSIZ];
+    char* filename;
+    char duff[BUFSIZ];
+    char file_path[BUFSIZ];
+
+    struct stat buffer;
+
+    strcpy(friend, cm.tousername);
+
+    strcpy(temp, "------发送文件------\n");
+    Write(cm.cfd, temp);
+    
+    strcpy(temp, "-send_file");
+    Write(cm.cfd, temp);
+
+    while(1)
+    {
+        Read(cm.cfd, buf, sizeof(buf), __LINE__);
+        if(strcmp(buf, "q") == 0)
+        {
+            break;
+        }
+        else if(strcmp(buf, "-start_send") == 0)
+        {
+            char name[100];
+            //获取用户端传来的文件长度
+            int len;
+            Read(cm.cfd, buf, sizeof(buf), __LINE__);
+            len = atoi(buf);
+            //获取客户端传来的文件名于buf中
+            Read(cm.cfd, buf, sizeof(buf), __LINE__);
+            sprintf(temp, "./file_buf/%s", buf);
+            printf("temp = %s\n", temp);
+            strcpy(name, buf);
+            //创建文件
+            FILE *fp = fopen(temp, "wb");
+            if (fp == NULL) 
+            {
+                perror("Can't open file");
+                exit(1);
+            }
+            
+            //把数据写入文件
+            printf("Start receive file: %s from %s\n", temp, inet_ntoa(cm.clit_addr.sin_addr));
+            Read(cm.cfd, buf, len, __LINE__);
+            fwrite(buf, sizeof(char), len, fp);
+            puts("Receive Success");
+
+            //关闭文件
+            fclose(fp);
+
+            //把该文件名添加到OffLineMes中
+            sprintf(query_str, "insert into OffLineMes values \
+            (\"%s\", \"%s\", \"%s\", \"%s\", \"6\")", \
+            get_time(now_time), cm.username, friend, name);
+            MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);   
+
+            printf("break?\n");
+            break;
+        }
+    }
+
+    pthread_exit(0);
+}
+
+void *func_Friend_recv_file(void *arg)
+{
+    struct cfd_mysql cm;
+    cm = *(struct cfd_mysql *)arg;
+
+    MYSQL_ROW row;
+    MYSQL_RES *res;
+
+    pthread_t thid;
+
+    char temp[BUFSIZ];
+    char buf[BUFSIZ];
+    char query_str[BUFSIZ];
+    char now_time[BUFSIZ];
+    char friend[BUFSIZ];
+    char filename[BUFSIZ];
+    char duff[BUFSIZ];
+    char file_path[BUFSIZ];
+
+    struct stat buffer;
+
+    strcpy(filename, cm.tousername);
+    sprintf(file_path, "./file_buf/%s", filename);
+
+    strcpy(temp, "------接收文件------\n");
+    Write(cm.cfd, temp);
+    strcpy(temp, "------输入\"-recv_file\"以接收文件(q to quit)\n");
+    Write(cm.cfd, temp);
+
+    while(1)
+    {
+        Read(cm.cfd, buf, sizeof(buf), __LINE__);
+        if(strcmp(buf, "q") == 0)
+        {
+            break;
+        }
+        else if(strcmp(buf, "-recv_file") == 0)
+        {
+            Write(cm.cfd, buf);
+
+            //把文件长度发送给客户端
+            if(stat(file_path, &buffer) == -1)
+            {
+                my_err("stat error", __LINE__);
+            }
+            sprintf(buf, "%d", buffer.st_size);
+            Write(cm.cfd, buf);
+            //把文件名发送给客户端
+            Write(cm.cfd, filename);
+
+            //向套接字发送文件
+            //打开要发送的文件
+            // FILE *fp = fopen(file_path, "rb");
+            int fp = open(file_path, O_CREAT|O_RDONLY, S_IWUSR|S_IRUSR);
+
+            //读取并发送文件
+            sendfile(cm.cfd, fp, 0, buffer.st_size);
+            puts("Send Success");
+
+            //关闭文件和套接字
+            close(fp);
+
+            break;
         }
     }
 
