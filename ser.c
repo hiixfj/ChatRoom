@@ -999,7 +999,7 @@ void *func_yonghu(void *arg)
         }
         else if(strcmp(buf, "b") == 0)
         {
-            strcpy(duff, "---添加好友(1)/添加群(2)(q to quit)---\n");
+            strcpy(duff, "---添加好友(1)/(q to quit)---\n");
             Write(cm.cfd, duff);
             Read(cm.cfd, buf, sizeof(buf), __LINE__);
             if(strcmp(buf, "q") == 0)
@@ -1044,10 +1044,6 @@ void *func_yonghu(void *arg)
                         continue;
                     }
                 }
-            }
-            else if(strcmp(buf, "2") == 0)
-            {
-
             }
         }
         else if(strcmp(buf, "c") == 0)
@@ -1333,9 +1329,6 @@ void *func_private_chat(void *arg)
         sprintf(query_str, "delete from OffLineMes where time = \"%s\"", row[0]);
         MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
     }
-    strcpy(temp, "------(\"-h\" for help)------\n");
-    Write(cm.cfd, temp);
-    memset(temp, 0, sizeof(temp));
 
     while(1)
     {
@@ -1348,13 +1341,15 @@ void *func_private_chat(void *arg)
         else if(strcmp(buf, "-hisdata") == 0)
         {
             sprintf(query_str, "select * from HisData \
-            where touser = \"%s\"", cm.username);
+            where inuser = \"%s\" and touser = \"%s\" or inuser = \"%s\" and touser = \"%s\"", \
+            cm.username, friend, friend, cm.username);
             MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
             res = mysql_store_result(&cm.mysql);
             if(res == NULL)
             {
                 my_err("mysql_store_result error", __LINE__);
             }
+
             while(row = mysql_fetch_row(res))
             {
                 sprintf(temp, "<%s>-<%s>:%s", row[0], row[1], row[3]);
@@ -1365,7 +1360,7 @@ void *func_private_chat(void *arg)
         }
         else if(strcmp(buf, "-Friends_permissions") == 0)
         {
-            if(pthread_create(&thid, NULL, func_Friends_permissions, (void *)&cm) == 0)
+            if(pthread_create(&thid, NULL, func_Friends_permissions, (void *)&cm) == -1)
             {
                 my_err("pthread_create error", __LINE__);
             }
@@ -1472,7 +1467,7 @@ void Friendchat_h(void *arg)
     Write(cm.cfd, temp);
     memset(temp, 0, sizeof(temp));
     //-Friends_permissions  管理好友权限
-    strcpy(temp, "------(\"-Friends_permissions\" to view chat history)------\n");
+    strcpy(temp, "------(\"-Friends_permissions\" to set friend permission)------\n");
     Write(cm.cfd, temp);
     memset(temp, 0, sizeof(temp));
     
@@ -1561,6 +1556,9 @@ void *func_Friends_permissions(void *arg)
                 }
                 else if(strcmp(buf, "q") == 0)
                 {
+                    strcpy(temp, "---好友权限界面退出---\n");
+                    Write(cm.cfd, temp);
+
                     break;
                 }
                 else
@@ -1746,6 +1744,12 @@ void *func_Friend_recv_file(void *arg)
             //读取并发送文件
             sendfile(cm.cfd, fp, 0, buffer.st_size);
             puts("Send Success");
+
+            //删除这个临时文件
+            if(unlink(file_path) == -1)
+            {
+                my_err("unlink error", __LINE__);
+            }
 
             //关闭文件和套接字
             close(fp);
