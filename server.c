@@ -21,7 +21,7 @@ int main()
     int ret;
     int i,j = 0;
     int n;
-    char buf[BUFSIZ];
+    char buf[BUFSIZE];
     int flag;
 
     MYSQL           mysql;
@@ -31,7 +31,7 @@ int main()
     int             rc, fields;
     int             rows;
 
-    char temp[BUFSIZ];
+    char temp[BUFSIZE];
 
     pthread_t thid;
 

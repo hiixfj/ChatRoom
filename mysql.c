@@ -6,7 +6,7 @@ int mysql_repeat(MYSQL *mysql, const char *string, const char *str, int field)
     MYSQL_RES *res;
     MYSQL_ROW row;
 
-    char query_str[BUFSIZ];
+    char query_str[BUFSIZE];
 
     sprintf(query_str, "select * from %s", string);
     rows = mysql_real_query(mysql, query_str, strlen(query_str));
@@ -37,7 +37,7 @@ int mysql_inquire_newsnum(MYSQL *mysql, const char *username, int line)
     MYSQL_RES *res, *res2;
 
     int newsnum = 0;
-    char query_str[BUFSIZ];
+    char query_str[BUFSIZE];
 
     memset(query_str, 0, sizeof(query_str));
     sprintf(query_str, "select newsnum from UserData where username = \"%s\"", username);

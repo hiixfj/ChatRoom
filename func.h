@@ -19,6 +19,7 @@
 
 #define MAXEVE 1024
 #define MAX_LINE 4096
+#define BUFSIZE 1024
 
 struct cfd_mysql
 {

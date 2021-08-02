@@ -13,9 +13,9 @@ void *func_Group_options(void *arg)
     MYSQL_ROW row;
     MYSQL_RES *res;
 
-    char buf[BUFSIZ];
-    char temp[BUFSIZ];
-    char query_str[BUFSIZ];
+    char buf[BUFSIZE];
+    char temp[BUFSIZE];
+    char query_str[BUFSIZE];
 
     while(1)
     {
@@ -83,9 +83,9 @@ void *Group_create(void *arg)
 
     int flag = 0;
 
-    char buf[BUFSIZ];
-    char temp[BUFSIZ];
-    char query_str[BUFSIZ];
+    char buf[BUFSIZE];
+    char temp[BUFSIZE];
+    char query_str[BUFSIZE];
 
     memset(temp, 0, sizeof(temp));
     strcpy(temp, "---创建群---\n");
@@ -168,11 +168,11 @@ void *Group_disband(void *arg)
     int flag;
     int master_flag;
 
-    char buf[BUFSIZ];
-    char temp[BUFSIZ];
-    char query_str[BUFSIZ];
-    char group_name[BUFSIZ];
-    char now_time[BUFSIZ];
+    char buf[BUFSIZE];
+    char temp[BUFSIZE];
+    char query_str[BUFSIZE];
+    char group_name[BUFSIZE];
+    char now_time[BUFSIZE];
 
     memset(query_str, 0, sizeof(query_str));
     memset(buf, 0, sizeof(buf));
@@ -314,11 +314,11 @@ void *Group_apply(void *arg)
     int flag;
     int confirm_flag;
 
-    char buf[BUFSIZ];
-    char temp[BUFSIZ];
-    char query_str[BUFSIZ];
-    char group_name[BUFSIZ];
-    char now_time[BUFSIZ];
+    char buf[BUFSIZE];
+    char temp[BUFSIZE];
+    char query_str[BUFSIZE];
+    char group_name[BUFSIZE];
+    char now_time[BUFSIZE];
 
     strcpy(temp, "------申请加群------\n");
     Write(cm.cfd, temp);
@@ -396,11 +396,11 @@ void Group_broadcast(void *arg, char *q, int type)
     int flag;
     int group_flag;
 
-    char buf[BUFSIZ];
-    char temp[BUFSIZ];
-    char query_str[BUFSIZ];
-    char group_name[BUFSIZ];
-    char now_time[BUFSIZ];
+    char buf[BUFSIZE];
+    char temp[BUFSIZE];
+    char query_str[BUFSIZE];
+    char group_name[BUFSIZE];
+    char now_time[BUFSIZE];
 
     strcpy(temp, q);
     strcpy(group_name, cm.tousername);
@@ -467,10 +467,10 @@ void *func_group_list(void *arg)
     int flag;
     int group_flag;
 
-    char buf[BUFSIZ];
-    char temp[BUFSIZ];
-    char query_str[BUFSIZ];
-    char group_name[BUFSIZ];
+    char buf[BUFSIZE];
+    char temp[BUFSIZE];
+    char query_str[BUFSIZE];
+    char group_name[BUFSIZE];
 
     while(1)
     {
@@ -548,7 +548,7 @@ void Group_h(void *arg, int identity)
     struct cfd_mysql cm;
     cm = *(struct cfd_mysql *)arg;
 
-    char temp[BUFSIZ];
+    char temp[BUFSIZE];
 
     sprintf(temp, "------%s(group)------\n", cm.tousername);
     Write(cm.cfd, temp);
@@ -601,10 +601,10 @@ void *Group_chat(void *arg)
     int group_flag;
     int identity;
 
-    char buf[BUFSIZ];
-    char temp[BUFSIZ];
-    char query_str[BUFSIZ];
-    char group_name[BUFSIZ];
+    char buf[BUFSIZE];
+    char temp[BUFSIZE];
+    char query_str[BUFSIZE];
+    char group_name[BUFSIZE];
 
     strcpy(group_name, cm.tousername);
 
@@ -738,9 +738,9 @@ void Group_view_member(void *arg)
     int status;
     int identity;
 
-    char temp[BUFSIZ];
-    char query_str[BUFSIZ];
-    char group_name[BUFSIZ];
+    char temp[BUFSIZE];
+    char query_str[BUFSIZE];
+    char group_name[BUFSIZE];
 
     strcpy(group_name, cm.tousername);
 
@@ -828,11 +828,11 @@ void *Group_exit_group_chat(void *arg)
     int group_flag;
     int identity;
 
-    char buf[BUFSIZ];
-    char temp[BUFSIZ];
-    char query_str[BUFSIZ];
-    char group_name[BUFSIZ];
-    char group_master[BUFSIZ];
+    char buf[BUFSIZE];
+    char temp[BUFSIZE];
+    char query_str[BUFSIZE];
+    char group_name[BUFSIZE];
+    char group_master[BUFSIZE];
 
     strcpy(group_name, cm.tousername);
     identity = cm.tocfd;
@@ -942,11 +942,11 @@ void *Group_kick_member(void *arg)
     int identity;
     int to_identity;
 
-    char buf[BUFSIZ];
-    char temp[BUFSIZ];
-    char query_str[BUFSIZ];
-    char group_name[BUFSIZ];
-    char member_name[BUFSIZ];
+    char buf[BUFSIZE];
+    char temp[BUFSIZE];
+    char query_str[BUFSIZE];
+    char group_name[BUFSIZE];
+    char member_name[BUFSIZE];
 
     identity = cm.tocfd;
     strcpy(group_name, cm.tousername);
@@ -1048,12 +1048,12 @@ void *Group_Set_revoke_admini(void *arg)
     int to_identity;
     int admini_num;
 
-    char buf[BUFSIZ];
-    char temp[BUFSIZ];
-    char query_str[BUFSIZ];
-    char group_name[BUFSIZ];
-    char member_name[BUFSIZ];
-    char now_time[BUFSIZ];
+    char buf[BUFSIZE];
+    char temp[BUFSIZE];
+    char query_str[BUFSIZE];
+    char group_name[BUFSIZE];
+    char member_name[BUFSIZE];
+    char now_time[BUFSIZE];
 
     identity = cm.tocfd;
     strcpy(group_name, cm.tousername);
@@ -1268,8 +1268,8 @@ int Group_view_admini_num(void *arg)
 
     int admini_num; 
 
-    char query_str[BUFSIZ];
-    char group_name[BUFSIZ];
+    char query_str[BUFSIZE];
+    char group_name[BUFSIZE];
 
     strcpy(group_name, cm.tousername);
 

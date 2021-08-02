@@ -23,9 +23,9 @@ void *serv_new_client(void *arg)
     char nickname[20];
     char mibao[20];
 
-    char buf[BUFSIZ];
-    char query_str[BUFSIZ];
-    char duff[BUFSIZ];
+    char buf[BUFSIZE];
+    char query_str[BUFSIZE];
+    char duff[BUFSIZE];
 
     while(1)
     {   
@@ -295,11 +295,11 @@ void *func_yonghu(void *arg)
     int flag;
     int shield_flag;
 
-    char query_str[BUFSIZ];
-    char buf[BUFSIZ];
-    char temp[BUFSIZ];
-    char now_time[BUFSIZ];
-    char duff[BUFSIZ];
+    char query_str[BUFSIZE];
+    char buf[BUFSIZE];
+    char temp[BUFSIZE];
+    char now_time[BUFSIZE];
+    char duff[BUFSIZE];
 
     int newsnum = 0;
 
@@ -1118,10 +1118,10 @@ void *func_liaotian(void *arg)
 
     int newsnum;
 
-    char buf[BUFSIZ];
-    char query_str[BUFSIZ];
-    char temp[BUFSIZ];
-    char now_time[BUFSIZ];
+    char buf[BUFSIZE];
+    char query_str[BUFSIZE];
+    char temp[BUFSIZE];
+    char now_time[BUFSIZE];
 
     memset(buf, 0, sizeof(buf));
     memset(query_str, 0, sizeof(query_str));
@@ -1234,10 +1234,10 @@ void *func_liuyan(void *arg)
 
     int newsnum;
 
-    char query_str[BUFSIZ];
-    char buf[BUFSIZ];
-    char now_time[BUFSIZ];
-    char temp[BUFSIZ];
+    char query_str[BUFSIZE];
+    char buf[BUFSIZE];
+    char now_time[BUFSIZE];
+    char temp[BUFSIZE];
 
     memset(query_str, 0, sizeof(query_str));
     sprintf(query_str, "------%s(\"quit-exit\" to quit)------离线\n", cm.tousername);
@@ -1323,11 +1323,11 @@ void *func_private_chat(void *arg)
 
     int newsnum;
 
-    char buf[BUFSIZ];
-    char query_str[BUFSIZ];
-    char temp[BUFSIZ];
-    char now_time[BUFSIZ];
-    char friend[BUFSIZ];
+    char buf[BUFSIZE];
+    char query_str[BUFSIZE];
+    char temp[BUFSIZE];
+    char now_time[BUFSIZE];
+    char friend[BUFSIZE];
 
     memset(buf, 0, sizeof(buf));
     memset(query_str, 0, sizeof(query_str));
@@ -1429,11 +1429,11 @@ void Friend_send_mes(void *arg, char *q)
 
     int status;
 
-    char temp[BUFSIZ];
-    char friend[BUFSIZ];
-    char buf[BUFSIZ];
-    char query_str[BUFSIZ];
-    char now_time[BUFSIZ];
+    char temp[BUFSIZE];
+    char friend[BUFSIZE];
+    char buf[BUFSIZE];
+    char query_str[BUFSIZE];
+    char now_time[BUFSIZE];
 
     strcpy(buf, q);
     strcpy(friend, cm.tousername);
@@ -1480,7 +1480,7 @@ void Friendchat_h(void *arg)
     struct cfd_mysql cm;
     cm = *(struct cfd_mysql *)arg;
 
-    char temp[BUFSIZ];
+    char temp[BUFSIZE];
 
     sprintf(temp, "------%s(\"quit-exit\" to quit)------\n", cm.tousername);
     Write(cm.cfd, temp);
@@ -1510,10 +1510,10 @@ void *func_Friends_permissions(void *arg)
     MYSQL_ROW row;
     MYSQL_RES *res;
 
-    char temp[BUFSIZ];
-    char buf[BUFSIZ];
-    char query_str[BUFSIZ];
-    char now_time[BUFSIZ];
+    char temp[BUFSIZE];
+    char buf[BUFSIZE];
+    char query_str[BUFSIZE];
+    char now_time[BUFSIZE];
 
 
     //先看看好友是否已被屏蔽
@@ -1659,14 +1659,14 @@ void *func_Friend_send_file(void *arg)
 
     pthread_t thid;
 
-    char temp[BUFSIZ];
-    char buf[BUFSIZ];
-    char query_str[BUFSIZ];
-    char now_time[BUFSIZ];
-    char friend[BUFSIZ];
+    char temp[BUFSIZE];
+    char buf[BUFSIZE];
+    char query_str[BUFSIZE];
+    char now_time[BUFSIZE];
+    char friend[BUFSIZE];
     char* filename;
-    char duff[BUFSIZ];
-    char file_path[BUFSIZ];
+    char duff[BUFSIZE];
+    char file_path[BUFSIZE];
 
     struct stat buffer;
 
@@ -1738,14 +1738,14 @@ void *func_Friend_recv_file(void *arg)
 
     pthread_t thid;
 
-    char temp[BUFSIZ];
-    char buf[BUFSIZ];
-    char query_str[BUFSIZ];
-    char now_time[BUFSIZ];
-    char friend[BUFSIZ];
-    char filename[BUFSIZ];
-    char duff[BUFSIZ];
-    char file_path[BUFSIZ];
+    char temp[BUFSIZE];
+    char buf[BUFSIZE];
+    char query_str[BUFSIZE];
+    char now_time[BUFSIZE];
+    char friend[BUFSIZE];
+    char filename[BUFSIZE];
+    char duff[BUFSIZE];
+    char file_path[BUFSIZE];
 
     struct stat buffer;
 

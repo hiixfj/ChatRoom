@@ -7,14 +7,14 @@ pthread_cond_t cond;
 
 void *my_write(void *arg)
 {
-    char buf[BUFSIZ];
+    char buf[BUFSIZE];
     int cfd = *(int *)arg;
 
     while(1)
     {
         memset(buf, 0, sizeof(buf));
         scanf("%s", buf);
-        write(cfd, buf, BUFSIZ);
+        write(cfd, buf, BUFSIZE);
         if(strcmp(buf, "-send_file") == 0)
         {
             printf("lock_on\n");
@@ -31,9 +31,9 @@ void *my_write(void *arg)
 void *my_read(void *arg)
 {
     int len;
-    char buf[BUFSIZ];
-    char temp[BUFSIZ];
-    char file_path[BUFSIZ];
+    char buf[BUFSIZE];
+    char temp[BUFSIZE];
+    char file_path[BUFSIZE];
     char *file_name;
 
     int cfd = *(int *)arg;
@@ -187,7 +187,7 @@ int main(int argc, char **argv)
     }
 
     int cfd;
-    char buf[BUFSIZ];
+    char buf[BUFSIZE];
     int len;
 
     pthread_mutex_init(&mutex, NULL);
