@@ -561,10 +561,10 @@ void Group_h(void *arg, int identity)
     }
     else if(identity == 2)      //如果是群主的话，打印额外两条参数---踢人---设置群管理员
     {
-        strcpy(temp, "------(\"-kick_member\" to make member out of the group)------\n");
+        strcpy(temp, "------(\"-kick_member\" )------\n");
         Write(cm.cfd, temp);
 
-        strcpy(temp, "------(\"-Set_revoke_administrator\" to set or revoke an administrator)------\n");
+        strcpy(temp, "------(\"-Set_revoke_administrator\")------\n");
         Write(cm.cfd, temp);
     }
     //打印参数
@@ -574,7 +574,7 @@ void Group_h(void *arg, int identity)
     strcpy(temp, "------(\"-history\" to view chat history)------\n");
     Write(cm.cfd, temp);
 
-    strcpy(temp, "------(\"-view_group_member\" to view group member)------\n");
+    strcpy(temp, "------(\"-view_group_member\" to view member)------\n");
     Write(cm.cfd, temp);
 
     strcpy(temp, "------(\"-exit_group_chat\" to exit group chat)------\n");
@@ -1053,6 +1053,7 @@ void *Group_Set_revoke_admini(void *arg)
     char query_str[BUFSIZ];
     char group_name[BUFSIZ];
     char member_name[BUFSIZ];
+    char now_time[BUFSIZ];
 
     identity = cm.tocfd;
     strcpy(group_name, cm.tousername);
@@ -1119,7 +1120,7 @@ void *Group_Set_revoke_admini(void *arg)
 
                 strcpy(member_name, buf);
                 //获得这个人的身份
-                sprintf(query_str, "select status from %s where username = \"%s\"", \
+                sprintf(query_str, "select type from %s where username = \"%s\"", \
                                                     group_name,          member_name);
                 MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
                 res = mysql_store_result(&cm.mysql);
@@ -1154,6 +1155,13 @@ void *Group_Set_revoke_admini(void *arg)
 
                     sprintf(temp, "---<%s>成为新的管理员\n", member_name);
                     Write(cm.cfd, temp);
+
+                    //把设置管理员的消息发送给OffLineMes
+                    sprintf(temp, "你成为群<%s>的管理员", group_name);
+                    sprintf(query_str, "insert into OffLineMes values \
+                    (\"%s\", \"%s\", \"%s\", \"%s\", \"2\")", \
+                    get_time(now_time), group_name, member_name, temp);
+                    MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
 
                     continue;
                 }

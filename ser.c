@@ -61,7 +61,22 @@ void *serv_new_client(void *arg)
                     {
                         break;
                     }
-                    flag = mysql_repeat(&cm.mysql, "UserData", buf, 2);
+                    // flag = mysql_repeat(&cm.mysql, "UserData", buf, 2);
+                    sprintf(query_str, "select * from UserData where username = \"%s\"", username);
+                    MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+                    res = mysql_store_result(&cm.mysql);
+                    if(res == NULL)
+                    {
+                        my_err("mysql_store_result error", __LINE__);
+                    }
+                    flag = 1;
+                    while(row = mysql_fetch_row(res))
+                    {
+                        if(strcmp(buf, row[1]) == 0)
+                        {
+                            flag = 0;
+                        }
+                    }
                     if(flag == 1)
                     {
                         strcpy(duff, "---密码输入错误，请重新输入(q to quit):");
@@ -302,8 +317,19 @@ void *func_yonghu(void *arg)
         Write(cm.cfd, temp);
         memset(temp, 0, sizeof(temp));
         //打印用户界面选项
-        strcpy(duff, "[a] 好友列表\n[b] 添加好友\n[c] 群列表\n[d] 群选项\n[s] 刷新列表\n[q] 退出登陆\n");
+        strcpy(duff, "[a] 好友列表\n");
         Write(cm.cfd, duff);
+        strcpy(duff, "[b] 添加好友\n");
+        Write(cm.cfd, duff);
+        strcpy(duff, "[c] 群列表\n");
+        Write(cm.cfd, duff);
+        strcpy(duff, "[d] 群选项\n");
+        Write(cm.cfd, duff);
+        strcpy(duff, "[s] 刷新列表\n");
+        Write(cm.cfd, duff);
+        strcpy(duff, "[q] 退出\n");
+        Write(cm.cfd, duff);
+
         Read(cm.cfd, buf, sizeof(buf), __LINE__);
 
         if(strcmp(buf, "v") == 0)
@@ -1467,7 +1493,7 @@ void Friendchat_h(void *arg)
     Write(cm.cfd, temp);
     memset(temp, 0, sizeof(temp));
     //-Friends_permissions  管理好友权限
-    strcpy(temp, "------(\"-Friends_permissions\" to set friend permission)------\n");
+    strcpy(temp, "------(\"-Friends_permissions\" set permission)------\n");
     Write(cm.cfd, temp);
     memset(temp, 0, sizeof(temp));
     
@@ -1487,6 +1513,7 @@ void *func_Friends_permissions(void *arg)
     char temp[BUFSIZ];
     char buf[BUFSIZ];
     char query_str[BUFSIZ];
+    char now_time[BUFSIZ];
 
 
     //先看看好友是否已被屏蔽
@@ -1526,6 +1553,7 @@ void *func_Friends_permissions(void *arg)
 
                     if(strcmp(buf, "y") == 0)
                     {
+                        //把对方从自己的好友列表中删除
                         memset(query_str, 0, sizeof(query_str));
                         sprintf(query_str, "delete from %s where username = \"%s\"", \
                                                         cm.username,    cm.tousername);
@@ -1533,6 +1561,20 @@ void *func_Friends_permissions(void *arg)
                         
                         sprintf(temp, "---已删除好友:%s\n", cm.tousername);
                         Write(cm.cfd, temp);
+
+                        //把自己从对方的好友列表中删除
+                        memset(query_str, 0, sizeof(query_str));
+                        sprintf(query_str, "delete from %s where username = \"%s\"", \
+                                                        cm.tousername,      cm.username);
+                        MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+
+                        //给对方一个反馈
+                        memset(query_str, 0, sizeof(query_str));
+                        sprintf(temp, "<%s>删除了你的好友", cm.username);
+                        sprintf(query_str, "insert into OffLineMes values \
+                        (\"%s\", \"%s\", \"%s\", \"%s\", \"2\")", \
+                        get_time(now_time), cm.username, cm.tousername, temp);
+                        MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
 
                         break;
                     }

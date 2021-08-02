@@ -114,6 +114,7 @@ void *my_read(void *arg)
                 //读取服务器发来的文件名称
                 Read(cfd, buf, sizeof(buf), __LINE__);
                 sprintf(temp, "/home/crushbb/Desktop/%s", buf);
+                file_name = basename(temp);
                 //创建文件
                 FILE *fp = fopen(temp, "wb");
                 if (fp == NULL) 
@@ -123,10 +124,11 @@ void *my_read(void *arg)
                 }
                 
                 //把数据写入文件
-                printf("------开始接收文件<%s>------\n", buf);
+                printf("------开始接收文件<%s>------\n", file_name);
                 Read(cfd, buf, len, __LINE__);
                 fwrite(buf, sizeof(char), len, fp);
-                printf("------文件<%s>接收成功------\n", buf);
+                memset(buf, 0, sizeof(buf));
+                printf("------文件<%s>接收成功------\n", file_name);
 
                 fclose(fp);
 
