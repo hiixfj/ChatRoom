@@ -561,10 +561,10 @@ void Group_h(void *arg, int identity)
     }
     else if(identity == 2)      //如果是群主的话，打印额外两条参数---踢人---设置群管理员
     {
-        strcpy(temp, "------(\"-kick_member\" )------\n");
+        strcpy(temp, "------(\"-kick_member\" to kick member)------\n");
         Write(cm.cfd, temp);
 
-        strcpy(temp, "------(\"-Set_revoke_administrator\")------\n");
+        strcpy(temp, "------(\"-Set_revoke_administrator\" to set or revoke administrator)------\n");
         Write(cm.cfd, temp);
     }
     //打印参数

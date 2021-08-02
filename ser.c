@@ -317,18 +317,18 @@ void *func_yonghu(void *arg)
         Write(cm.cfd, temp);
         memset(temp, 0, sizeof(temp));
         //打印用户界面选项
-        strcpy(duff, "[a] 好友列表\n");
+        strcpy(duff, "[a] 好友列表\n[b] 添加好友\n[c] 群列表\n[d] 群选项\n[s] 刷新列表\n[q] 退出\n");
         Write(cm.cfd, duff);
-        strcpy(duff, "[b] 添加好友\n");
-        Write(cm.cfd, duff);
-        strcpy(duff, "[c] 群列表\n");
-        Write(cm.cfd, duff);
-        strcpy(duff, "[d] 群选项\n");
-        Write(cm.cfd, duff);
-        strcpy(duff, "[s] 刷新列表\n");
-        Write(cm.cfd, duff);
-        strcpy(duff, "[q] 退出\n");
-        Write(cm.cfd, duff);
+        // strcpy(duff, "[b] 添加好友\n");
+        // Write(cm.cfd, duff);
+        // strcpy(duff, "[c] 群列表\n");
+        // Write(cm.cfd, duff);
+        // strcpy(duff, "[d] 群选项\n");
+        // Write(cm.cfd, duff);
+        // strcpy(duff, "[s] 刷新列表\n");
+        // Write(cm.cfd, duff);
+        // strcpy(duff, "[q] 退出\n");
+        // Write(cm.cfd, duff);
 
         Read(cm.cfd, buf, sizeof(buf), __LINE__);
 

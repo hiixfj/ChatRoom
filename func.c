@@ -12,8 +12,8 @@ int Read(int fd, char *buf, size_t count, int line)
     memset(buf, 0, count);
 
     n = read(fd, buf, count);
-    printf("readn = %d\n", n);
-    printf("readbuf = %s\n", buf);
+    // printf("readn = %d\n", n);
+    // printf("readbuf = %s\n", buf);
     if(n < 0)
     {
         my_err("read error", line);
@@ -28,8 +28,8 @@ void Write(int fd, const char *buf)
     {   
         my_err("write error", __LINE__);
     }
-    printf("writen = %d\n", n);
-    printf("writebuf = %s\n", buf);
+    // printf("writen = %d\n", n);
+    // printf("writebuf = %s\n", buf);
 }
 
 char *get_time(char *now_time)
