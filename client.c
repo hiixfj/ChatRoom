@@ -14,7 +14,7 @@ void *my_write(void *arg)
     {
         memset(buf, 0, sizeof(buf));
         scanf("%s", buf);
-        write(cfd, buf, BUFSIZE);
+        write(cfd, buf, strlen(buf));
         if(strcmp(buf, "-send_file") == 0)
         {
             printf("lock_on\n");
