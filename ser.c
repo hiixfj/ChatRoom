@@ -1775,10 +1775,21 @@ void *func_Friend_send_file(void *arg)
             }
             
             //把数据写入文件
+            int n;
+            int sum = 0;
             printf("Start receive file: %s from %s\n", temp, inet_ntoa(cm.clit_addr.sin_addr));
-            Read(cm.cfd, buf, len, __LINE__);
-            fwrite(buf, sizeof(char), len, fp);
-            puts("Receive Success");
+            while((n = Read(cm.cfd, buf, 1024, __LINE__)) > 0)
+            {
+                fwrite(buf, sizeof(char), n, fp);
+                sum += n;
+                if(sum >= len)
+                {
+                    break;
+                }
+                // puts("Receive Success");
+            }
+            // fwrite(buf, sizeof(char), len, fp);
+            // puts("Receive Success");
 
             //关闭文件
             fclose(fp);

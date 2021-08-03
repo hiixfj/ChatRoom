@@ -13,8 +13,8 @@ void *my_write(void *arg)
     while(1)
     {
         memset(buf, 0, sizeof(buf));
-        // scanf("%s", buf);
-        fgets(buf, sizeof(buf), stdin);
+        scanf("%s", buf);
+        // fgets(buf, sizeof(buf), stdin);
         write(cfd, buf, strlen(buf));
         if(strcmp(buf, "-send_file") == 0)
         {
@@ -125,9 +125,19 @@ void *my_read(void *arg)
                 }
                 
                 //把数据写入文件
+                int n;
+                int sum = 0;
                 printf("------开始接收文件<%s>------\n", file_name);
-                Read(cfd, buf, len, __LINE__);
-                fwrite(buf, sizeof(char), len, fp);
+                while((n = Read(cfd, buf, 1024, __LINE__)) > 0)
+                {
+                    fwrite(buf, sizeof(char), n, fp);
+                    sum += n;
+                    if(sum >= len)
+                    {
+                        break;
+                    }
+                }
+                // fwrite(buf, sizeof(char), len, fp);
                 memset(buf, 0, sizeof(buf));
                 printf("------文件<%s>接收成功------\n", file_name);
 
