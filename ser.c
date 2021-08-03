@@ -225,6 +225,7 @@ void *serv_new_client(void *arg)
                         Write(cm.cfd, duff);
                         continue;
                     }
+                    break;
                 }
 
                 //账号密保均输入正确
@@ -1048,6 +1049,48 @@ void *func_yonghu(void *arg)
                     flag = mysql_repeat(&cm.mysql, "UserData", buf, 1);
                     if(flag == 0)
                     {
+                        //判断对方是否已经是自己的好友
+                        shield_flag = 0;
+                        sprintf(query_str, "select * from %s where username = \"%s\"", cm.username, buf);
+                        res = mysql_store_result(&cm.mysql);
+                        if(res == NULL)
+                        {
+                            my_err("mysql_store_result error", __LINE__);
+                        }
+                        while(row = mysql_fetch_row(res))
+                        {
+                            shield_flag = 1;
+                        }
+                        if(shield_flag == 1)
+                        {
+                            strcpy(temp, "---对方已经是你的好友，无法重复添加---\n");
+                            Write(cm.cfd, temp);
+                            continue;
+                        }
+
+                        //判断是否已经给对方发送过好友申请
+                        shield_flag = 0;
+                        sprintf(query_str, "select * from OffLineMes \
+                        where inuser = \"%s\" and touser = \"%s\" and type = \"1\"", \
+                                    cm.username,            buf);
+                        MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+                        res = mysql_store_result(&cm.mysql);
+                        if(res == NULL)
+                        {
+                            my_err("mysql_store_result error", __LINE__);
+                        }
+                        while(row = mysql_fetch_row(res))
+                        {
+                            shield_flag = 1;
+                        }
+                        if(shield_flag == 1)
+                        {
+                            strcpy(temp, "---已向对方发送请求，不可重复发送\n");
+                            Write(cm.cfd, temp);
+                            continue;
+                        }
+
+
                         strcpy(duff, "---已发送好友请求\n");
                         Write(cm.cfd, duff);
 
@@ -1429,6 +1472,7 @@ void Friend_send_mes(void *arg, char *q)
     MYSQL_ROW row;
     MYSQL_RES *res;
 
+    int flag;
     int status;
 
     char temp[BUFSIZE];
@@ -1439,6 +1483,29 @@ void Friend_send_mes(void *arg, char *q)
 
     strcpy(buf, q);
     strcpy(friend, cm.tousername);
+
+    //在发送消息之前，先判断对方是否屏蔽自己
+    flag = 0;
+    sprintf(query_str, "select * from %s where username = \"%s\"", friend, cm.username);
+    MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+    res = mysql_store_result(&cm.mysql);
+    if(res == NULL)
+    {
+        my_err("mysql_store_result error", __LINE__);
+    }
+    while(row = mysql_fetch_row(res))
+    {
+        if(atoi(row[1]) == 0)
+        {
+            flag = 1;
+        }
+    }
+    if(flag == 1)
+    {
+        sprintf(temp, "---<%s>已将你屏蔽，消息无法发送\n", friend);
+        Write(cm.cfd, temp);
+        return;
+    }
 
     //把消息发送给friend之前，先判断是否在线，再选择发送方式
     sprintf(query_str, "select * from UserData \

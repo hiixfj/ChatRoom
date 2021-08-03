@@ -857,6 +857,7 @@ void *Group_exit_group_chat(void *arg)
 
                 while(1)
                 {
+                    group_flag = 0;
                     //打印出群成员列表
                     Group_view_member((void *)&cm);
                     strcpy(temp, "---请输入你要转移的用户名以转交群主(q to quit):\n");
@@ -872,7 +873,28 @@ void *Group_exit_group_chat(void *arg)
                         strcpy(temp, "---群内不存在此用户---\n");
                         continue;
                     }
+                    //判断输入的群主继承者是否是现在的群主
                     strcpy(group_master, buf);
+                    sprintf(query_str, "select * from %s where username = \"%s\"", group_name, group_master);
+                    res = mysql_store_result(&cm.mysql);
+                    if(res == NULL)
+                    {
+                        my_err("mysql_store_result error", __LINE__);
+                    }
+                    while(row = mysql_fetch_row(res))
+                    {
+                        if(atoi(row[1]) == 2)
+                        {
+                            group_flag = 1;
+                        }
+                    }
+                    if(group_flag == 1)
+                    {
+                        strcpy(temp, "---你不可以把群主转移给自己");
+                        Write(cm.cfd, temp);
+                        continue;
+                    }
+
                     sprintf(temp, "---你确认要将<%s>群的群主给<%s>吗?(y/n)", group_name, buf);
                     Write(cm.cfd, temp);
                     Read(cm.cfd, buf, sizeof(buf), __LINE__);

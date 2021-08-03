@@ -25,11 +25,10 @@ char *get_time(char now_time[BUFSIZ])
 int main()
 {
     char buf[BUFSIZ];
-	int temp = 111;
+	
+	fgets(buf, sizeof(buf), stdin);
 
-	sprintf(buf, "%d", temp);
-
-	printf("%s\n", buf);
+	printf("buf = %s", buf);
 
     return 0;
 }

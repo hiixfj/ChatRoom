@@ -13,7 +13,8 @@ void *my_write(void *arg)
     while(1)
     {
         memset(buf, 0, sizeof(buf));
-        scanf("%s", buf);
+        // scanf("%s", buf);
+        fgets(buf, sizeof(buf), stdin);
         write(cfd, buf, strlen(buf));
         if(strcmp(buf, "-send_file") == 0)
         {

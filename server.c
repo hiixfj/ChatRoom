@@ -201,10 +201,10 @@ int main()
                         }
                     }
                 }
-                else
-                {
-                    my_err("read error", __LINE__);
-                }
+                // else
+                // {
+                //     my_err("read error", __LINE__);
+                // }
             }
         }
     }

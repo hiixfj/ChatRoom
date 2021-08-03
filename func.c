@@ -24,7 +24,7 @@ int Read(int fd, char *buf, size_t count, int line)
 void Write(int fd, const char *buf)
 {  
     int n;
-    if((n = write(fd, buf, strlen(buf))) == -1)
+    if((n = write(fd, buf, BUFSIZE)) == -1)
     {   
         my_err("write error", __LINE__);
     }
