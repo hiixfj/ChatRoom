@@ -272,6 +272,8 @@ void *serv_new_client(void *arg)
         }
         else if(strcmp(buf, "q") == 0)    //关闭子线程
         {
+            strcpy(duff, "---程序已退出，请按Ctrl+C退出---\n");
+            Write(cm.cfd, duff);
             break;
         }
     }
