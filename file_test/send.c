@@ -106,6 +106,7 @@ int main(int argc, char **argv)
 
     char file_path[BUFSIZE];
     char *file_name;
+    char temp[BUFSIZE];
     struct stat buffer;
 
     printf("输入完整的文件名:");
@@ -117,24 +118,27 @@ int main(int argc, char **argv)
         printf("---非法的路径名---\n");
         return 0;
     }
-    //获取文件长度并发送给server的套接字
-    sprintf(buf, "%d", buffer.st_size);
-    Write(cfd, buf);
-    //获取文件名并发送给server的套接字
     file_name = basename(file_path);
-    // printf("file_name = %s\n", file_name);
-    strcpy(buf, file_name);
-    Write(cfd, buf);
+    struct node
+    {
+        int len;
+        char name[100];
+    }node;
+    node.len = buffer.st_size;
+    strcpy(node.name, file_name);
+    
+    memcpy(temp, &node, sizeof(node));
+    write(cfd, temp, sizeof(temp));
     
     //开始向服务器的文件缓冲区发送文件
     int fp = open(file_path, O_CREAT|O_RDONLY, S_IRUSR|S_IWUSR);
 
-    printf("---开始传送文件:%s---\n", buf);
+    printf("---开始传送文件:%s---\n", node.name);
     sendfile(cfd, fp, 0, buffer.st_size);
-    printf("---文件<%s>传送成功---\n", buf);
+    printf("---文件<%s>传送成功---\n", node.name);
 
     close(fp);
-    close(cfd);
+    // close(cfd);
 
     return 0;
 }

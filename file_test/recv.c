@@ -77,23 +77,20 @@ int main()
         my_err("accept error", __LINE__);
 
     char buf[BUFSIZ];
-    char temp[BUFSIZ];
+    char temp[BUFSIZE];
     char name[100];
 
+    struct node
+    {
+        int len;
+        char name[100];
+    }node;
 
+    memset(temp, 0, sizeof(temp));
+    read(cfd, temp, sizeof(temp));
+    memcpy(&node, temp, sizeof(node));
 
-
-
-    //获取用户端传来的文件长度
-    unsigned long long len;
-    Read(cfd, buf, sizeof(buf), __LINE__);
-    len = atoi(buf);
-    // printf("len = %d\n", len);
-    int n;
-    //获取客户端传来的文件名于buf中
-    Read(cfd, buf, sizeof(buf), __LINE__);
-    // printf("file_name = %s\n", buf);
-    sprintf(temp, "./file_recv/%s", buf);
+    sprintf(temp, "./file_recv/%s", node.name);
     //创建文件
     FILE *fp = fopen(temp, "wb");
     if (fp == NULL) 
@@ -105,15 +102,21 @@ int main()
     //把数据写入文件
     printf("Start receive file: %s from %s\n", temp, inet_ntoa(clit_addr.sin_addr));
 
-
+    int n;
+    int sum = 0;
     while((n = Read(cfd, buf, BUFSIZ, __LINE__)) > 0)
-    {
-        printf("n = %d\n", n);
+    {   
+        // printf("n = %d\n", n);
         fwrite(buf, sizeof(char), n, fp);
+        sum += n;
+        if(sum >= node.len)
+        {
+            break;
+        }
     }
 
-    Read(cfd, buf, len, __LINE__);
-    fwrite(buf, sizeof(char), len, fp);
+    // Read(cfd, buf, node.len, __LINE__);
+    // fwrite(buf, sizeof(char), node.len, fp);
     
     
     puts("Receive Success");
