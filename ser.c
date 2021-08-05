@@ -1052,10 +1052,15 @@ void *func_yonghu(void *arg)
                         //判断对方是否已经是自己的好友
                         shield_flag = 0;
                         sprintf(query_str, "select * from %s where username = \"%s\"", cm.username, buf);
+                        // printf("%s\n", query_str);
                         res = mysql_store_result(&cm.mysql);
                         if(res == NULL)
                         {
-                            my_err("mysql_store_result error", __LINE__);
+                            if(strcmp(mysql_error(&cm.mysql), "") != 0)
+                            {
+                                printf("%d : error : %s\n", __LINE__, mysql_error(&cm.mysql));
+                                my_err("mysql_store_result error", __LINE__);
+                            }
                         }
                         while(row = mysql_fetch_row(res))
                         {
@@ -1763,7 +1768,7 @@ void *func_Friend_send_file(void *arg)
             len = atoi(buf);
             //获取客户端传来的文件名于buf中
             Read(cm.cfd, buf, sizeof(buf), __LINE__);
-            sprintf(temp, "./file_buf/%s", buf);
+            sprintf(temp, "./../file_buf/%s", buf);
             printf("temp = %s\n", temp);
             strcpy(name, buf);
             //创建文件
@@ -1830,7 +1835,7 @@ void *func_Friend_recv_file(void *arg)
     struct stat buffer;
 
     strcpy(filename, cm.tousername);
-    sprintf(file_path, "./file_buf/%s", filename);
+    sprintf(file_path, "./../file_buf/%s", filename);
 
     strcpy(temp, "------接收文件------\n");
     Write(cm.cfd, temp);
