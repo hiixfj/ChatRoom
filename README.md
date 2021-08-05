@@ -27,7 +27,7 @@ epoll_LT模式架构实现聊天室
 
 
   > cd make
-    make  
+  > make  
 
 ### 关于mysql数据库
   **请务必在使用前更改成自己的MYSQL**
