@@ -19,8 +19,13 @@ epoll_LT模式架构实现聊天室
 ## 使用
 ~~### 服务器端：~~
   > ~~gcc -o server server.c ser.c group.c func.c mysql.c -pthread -lmysqlclient~~
+
+
+
 ~~### 客户端：~~
   > ~~gcc -o client client.c func.c -pthread -lmysqlclient~~
+
+
   > cd make
     make  
 
