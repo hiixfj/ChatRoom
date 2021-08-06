@@ -24,8 +24,10 @@ int Read(int fd, char *buf, size_t count, int line)
 void Write(int fd, const char *buf)
 {  
     int n;
-    if((n = write(fd, buf, BUFSIZE)) == -1)
-    {   
+    char temp[BUFSIZE];
+    strcpy(temp, buf);
+    if((n = write(fd, temp, strlen(temp))) == -1)
+    {
         my_err("write error", __LINE__);
     }
     // printf("writen = %d\n", n);

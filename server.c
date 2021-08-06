@@ -102,7 +102,7 @@ int main()
 
     epfd = epoll_create(MAXEVE);
     tep.data.fd = lfd;
-    tep.events = EPOLLIN;
+    tep.events = EPOLLIN | EPOLLERR | EPOLLHUP | EPOLLRDHUP;
 
     epoll_ctl(epfd, EPOLL_CTL_ADD, lfd, &tep);
 
@@ -111,6 +111,8 @@ int main()
 
     struct cfd_mysql cm;
     void *retval;
+    memset(clients, 0, sizeof(clients));
+    cm.tocfd = epfd;
 
     while(1)
     {
@@ -126,7 +128,7 @@ int main()
                     my_err("accept error", __LINE__);
 
                 tep.data.fd = cfd;
-                tep.events = EPOLLIN;
+                tep.events = EPOLLIN | EPOLLONESHOT | EPOLLRDHUP;
                 epoll_ctl(epfd, EPOLL_CTL_ADD, cfd, &tep);
 
                 printf("ip %s is connect\n", inet_ntoa(clit_addr.sin_addr));
@@ -137,10 +139,7 @@ int main()
             }
             else                //cfd们满足读事件，有客户端数据写来
             {
-                // for(j=0;j<birth; j++)
-                //     printf("%d ", clients[j]);
-                // printf("\n");
-
+                //判断数组clients中有没有此用户的套接字
                 j = 0;
                 flag = 0;
                 while(j<1000)
@@ -154,9 +153,9 @@ int main()
                 }
                 if(flag == 1)
                 {
-                    continue;
+                    printf("%d : cfd = %d\n", __LINE__, ep[i].data.fd);
+                    break;
                 }
-
                 //读套接字
                 n = read(ep[i].data.fd, buf, sizeof(buf));
                 if(n == 0)
@@ -186,6 +185,7 @@ int main()
                         j++;
                     }
                     printf("flag = %d\n", flag);
+                    printf("cfd = %d\n", ep[i].data.fd);
                     if(flag == 0)   //flag = 0 证明该客户端还未创建属于它的子线程
                     {
                         cm.cfd = ep[i].data.fd;

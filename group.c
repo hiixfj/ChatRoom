@@ -412,6 +412,16 @@ void Group_broadcast(void *arg, char *q, int type)
     {
         my_err("mysql_store_result error", __LINE__);
     }
+
+    //发消息之前，判断自己是否还是群成员
+    flag = mysql_repeat(&cm.mysql, cm.username, group_name, 1);
+    if(flag == 1)
+    {
+        sprintf(buf, "---你已不是群<%s>的成员\n", group_name);
+        Write(cm.cfd, buf);
+        return;
+    }
+
     //广播消息---把消息发给所有群成员
     while(row = mysql_fetch_row(res))
     {
@@ -490,7 +500,7 @@ void *func_group_list(void *arg)
         }
         while(row = mysql_fetch_row(res))
         {
-            sprintf(temp, "---<%s>", row[0]);
+            sprintf(temp, "---<%s>\n", row[0]);
             Write(cm.cfd, temp);
         }
 
@@ -524,6 +534,16 @@ void *func_group_list(void *arg)
         if(group_flag == 0)
         {
             strcpy(temp, "---不存在此群\n");
+            Write(cm.cfd, temp);
+            continue;
+        }
+
+        //执行到这里说明群名存在
+        //判断自己是否是该群群成员
+        flag = mysql_repeat(&cm.mysql, cm.username, buf, 1);
+        if(flag == 1)
+        {
+            sprintf(temp, "---你尚未加入群聊<%s>\n", buf);
             Write(cm.cfd, temp);
             continue;
         }
@@ -1030,11 +1050,21 @@ void *Group_kick_member(void *arg)
                     break;
                 }   
 
-                //把member_name从Group_name中移除
+                //把member_name从"Group_name"中移除
                 sprintf(query_str, "delete from %s where username = \"%s\"", \
                                             group_name,           member_name);
                 MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
 
+                //把member_name从"username"中移除
+                sprintf(query_str, "delete from %s where username = \"%s\"", \
+                                            member_name,            group_name);
+                MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+
+                //给自己一个反馈
+                sprintf(temp, "---成功将<%s>踢出群聊<%s>\n", member_name, group_name);
+                Write(cm.cfd, temp);
+
+                break;
             }
             else if(strcmp(buf, "n") == 0)
             {

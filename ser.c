@@ -13,6 +13,12 @@ void *serv_new_client(void *arg)
     struct cfd_mysql cm;
     cm = *(struct cfd_mysql *)arg;
 
+    struct epoll_event ev;
+    ev.data.fd = cm.cfd;
+    ev.events = EPOLLIN | EPOLLONESHOT;
+    epoll_ctl(cm.tocfd, EPOLL_CTL_MOD, cm.cfd, &ev);
+
+
     int rows;
     MYSQL_ROW row;
     MYSQL_RES *res;
@@ -273,12 +279,27 @@ void *serv_new_client(void *arg)
         }
         else if(strcmp(buf, "q") == 0)    //关闭子线程
         {
-            strcpy(duff, "---程序已退出，请按Ctrl+C退出---\n");
+            strcpy(duff, "---程序已退出---\n");
             Write(cm.cfd, duff);
             break;
         }
     }
 
+    // //关闭此用户子线程的套接字
+    // sprintf(query_str, "select cfd from UserData where username = \"%s\"", cm.username);
+    // MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+    // res = mysql_store_result(&cm.mysql);
+    // if(res == NULL)
+    // {
+    //     my_err("mysql_store_result error", __LINE__);
+    // }
+    // while(row = mysql_fetch_row(res))
+    // {
+    //     cm.cfd = atoi(row[0]);
+    // }
+    // printf("cfd(%d) 已关闭\n", cm.cfd);
+
+    // close(cm.cfd);
     pthread_exit(0);
 }
 
@@ -1508,6 +1529,26 @@ void Friend_send_mes(void *arg, char *q)
     if(flag == 1)
     {
         sprintf(temp, "---<%s>已将你屏蔽，消息无法发送\n", friend);
+        Write(cm.cfd, temp);
+        return;
+    }
+
+    //发送消息之前，判断对方是否还是自己的好友
+    flag = 0;
+    sprintf(query_str, "select * from %s where username = \"%s\"", cm.username, friend);
+    MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+    res = mysql_store_result(&cm.mysql);
+    if(res == NULL)
+    {
+        my_err("mysql_store_result error", __LINE__);
+    }
+    while(row = mysql_fetch_row(res))
+    {
+        flag = 1;
+    }
+    if(flag == 0)
+    {
+        sprintf(temp, "---对方已不是你的好友，请先添加对方好友再发送消息\n");
         Write(cm.cfd, temp);
         return;
     }
