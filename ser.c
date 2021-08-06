@@ -487,6 +487,21 @@ void *func_yonghu(void *arg)
                                 Read(cm.cfd, buf, sizeof(buf), __LINE__);
                                 if(strcmp(buf, "t") == 0)
                                 {
+                                    //判断对方是否已是自己的好友
+                                    flag = mysql_repeat(&cm.mysql, cm.username, row[1], 1);
+                                    if(flag == 0)
+                                    {
+                                        strcpy(temp, "---对方已是你的好友，不可重复同意\n");
+                                        Write(cm.cfd, temp);
+
+                                        //把这条消息从自己的未读消息队列中抹去
+                                        sprintf(query_str, "delete from OffLineMes where time = \"%s\"", row[0]);
+                                        MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+                                        memset(query_str, 0, sizeof(query_str));
+
+                                        break;
+                                    }
+
                                     //给自己一个回馈
                                     strcpy(duff, "---已接受\n");
                                     Write(cm.cfd, duff);
@@ -878,6 +893,21 @@ void *func_yonghu(void *arg)
 
                                 if(strcmp(buf, "t") == 0)
                                 {
+                                    //判断对方是否已是群成员
+                                    flag = mysql_repeat(&cm.mysql, row2[2], row2[1], 1);
+                                    if(flag == 0)
+                                    {
+                                        strcpy(temp, "---对方已是群成员，不可重复同意申请\n");
+                                        Write(cm.cfd, temp);
+
+                                        //将这条消息从OffLineMes中抹去
+                                        sprintf(query_str, "delete from OffLineMes \
+                                                    where time = \"%s\"", row2[0]);
+                                        MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+
+                                        break;
+                                    }
+
                                     //给自己一个反馈
                                     sprintf(temp, "---已接受<%s>的加群请求---\n", row2[1]);
                                     Write(cm.cfd, temp);

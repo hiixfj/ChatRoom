@@ -366,6 +366,17 @@ void *Group_apply(void *arg)
         }
 
         //执行到这里说明输入正确
+
+        //判断自己是否已在该群中
+        flag = mysql_repeat(&cm.mysql, group_name, cm.username, 1);
+        if(flag == 0)
+        {
+            strcpy(temp, "---你已是该群的群成员，不可重复添加\n");
+            Write(cm.cfd, temp);
+            continue;
+        }
+
+
         //开始发送加群申请到OffLineMes
         sprintf(temp, "%s：请求加入群聊：%s", cm.username, group_name);
         sprintf(query_str, "insert into OffLineMes values \
