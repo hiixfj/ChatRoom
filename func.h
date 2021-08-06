@@ -15,6 +15,7 @@
 #include <libgen.h>
 #include <sys/sendfile.h>
 #include <fcntl.h>
+#include <signal.h>
 #include "time.h"
 
 #define MAXEVE 1024

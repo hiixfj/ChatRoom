@@ -90,6 +90,28 @@ void *serv_new_client(void *arg)
                         continue;
                     }
                     //执行到这里说明账号密码输入正确
+
+                    //判断账号是否已经登陆
+                    flag = 0;
+                    sprintf(query_str, "select status from UserData where username = \"%s\"", username);
+                    MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+                    res = mysql_store_result(&cm.mysql);
+                    if(res == NULL)
+                    {
+                        my_err("mysql_store_result error", __LINE__);
+                    }
+                    while(row = mysql_fetch_row(res))
+                    {
+                        flag = atoi(row[0]);
+                    }
+                    if(flag == 1)
+                    {
+                        strcpy(duff, "---该账号已登陆\n");
+                        Write(cm.cfd, duff);
+                        break;
+                    }
+
+
                     //把UserData中的status改为1
                     //然后来进入用户界面
                     memset(query_str, 0, sizeof(query_str));
@@ -285,21 +307,21 @@ void *serv_new_client(void *arg)
         }
     }
 
-    // //关闭此用户子线程的套接字
-    // sprintf(query_str, "select cfd from UserData where username = \"%s\"", cm.username);
-    // MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
-    // res = mysql_store_result(&cm.mysql);
-    // if(res == NULL)
-    // {
-    //     my_err("mysql_store_result error", __LINE__);
-    // }
-    // while(row = mysql_fetch_row(res))
-    // {
-    //     cm.cfd = atoi(row[0]);
-    // }
-    // printf("cfd(%d) 已关闭\n", cm.cfd);
+    //关闭此用户子线程的套接字
+    sprintf(query_str, "select cfd from UserData where username = \"%s\"", cm.username);
+    MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
+    res = mysql_store_result(&cm.mysql);
+    if(res == NULL)
+    {
+        my_err("mysql_store_result error", __LINE__);
+    }
+    while(row = mysql_fetch_row(res))
+    {
+        cm.cfd = atoi(row[0]);
+    }
+    printf("cfd(%d) 已关闭\n", cm.cfd);
 
-    // close(cm.cfd);
+    close(cm.cfd);
     pthread_exit(0);
 }
 

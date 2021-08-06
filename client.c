@@ -155,6 +155,7 @@ void *my_read(void *arg)
 
 int main(int argc, char **argv)
 {
+    signal(SIGPIPE, SIG_IGN);
     //检查参数个数
     if(argc != 5)
     {

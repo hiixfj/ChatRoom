@@ -114,6 +114,8 @@ int main()
     memset(clients, 0, sizeof(clients));
     cm.tocfd = epfd;
 
+    signal(SIGPIPE, SIG_IGN);
+
     while(1)
     {
         //等待客户端的连接请求
