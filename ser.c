@@ -1126,6 +1126,7 @@ void *func_yonghu(void *arg)
                         shield_flag = 0;
                         sprintf(query_str, "select * from %s where username = \"%s\"", cm.username, buf);
                         // printf("%s\n", query_str);
+                        MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
                         res = mysql_store_result(&cm.mysql);
                         if(res == NULL)
                         {
@@ -1137,6 +1138,7 @@ void *func_yonghu(void *arg)
                         }
                         while(row = mysql_fetch_row(res))
                         {
+                            printf("%d : %s\n", __LINE__, row[0]);
                             shield_flag = 1;
                         }
                         if(shield_flag == 1)
