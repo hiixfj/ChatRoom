@@ -307,6 +307,15 @@ void *serv_new_client(void *arg)
         }
     }
 
+    //从clients中去除此套接字
+    for (int i=0; i<1000; i++)
+    {
+        if (clients[i] == cm.cfd)
+        {
+            clients[i] = 0;
+            break;
+        }
+    }
     //关闭此用户子线程的套接字
     sprintf(query_str, "select cfd from UserData where username = \"%s\"", cm.username);
     MY_real_query(&cm.mysql, query_str, strlen(query_str), __LINE__);
