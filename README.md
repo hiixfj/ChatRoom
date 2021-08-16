@@ -29,7 +29,7 @@ epoll_LT模式架构实现聊天室
   > ~~gcc -o client client.c func.c -pthread -lmysqlclient~~
 
 
-  > cd make
+  > cd build
   
   > make
 
