@@ -10,13 +10,13 @@ void *my_write(void *arg)
     char buf[BUFSIZE];
     int cfd = *(int *)arg;
 
-    while(1)
+    while (1)
     {
         memset(buf, 0, sizeof(buf));
         scanf("%s", buf);
         // fgets(buf, sizeof(buf), stdin);
         write(cfd, buf, strlen(buf));
-        if(strcmp(buf, "-send_file") == 0)
+        if (strcmp(buf, "-send_file") == 0)
         {
             printf("lock_on\n");
             pthread_mutex_lock(&mutex);
@@ -41,21 +41,20 @@ void *my_read(void *arg)
 
     struct stat buffer;
 
-
-    while(1)
+    while (1)
     {
         memset(buf, 0, sizeof(buf));
         len = read(cfd, buf, sizeof(buf));
         printf("%s\n", buf);
 
-        if(strcmp(buf, "-send_file") == 0)  //说明需要发送文件
+        if (strcmp(buf, "-send_file") == 0)  //说明需要发送文件
         {
-            while(1)
+            while (1)
             {
                 strcpy(temp, "---请输入完整的路径名(q to quit):");
                 printf("%s\n", temp);
                 scanf("%s", file_path);
-                if(strcmp(file_path, "q") == 0)
+                if (strcmp(file_path, "q") == 0)
                 {
                     strcpy(temp, "---取消发送文件---\n");
                     printf("%s\n", temp);
@@ -64,13 +63,13 @@ void *my_read(void *arg)
                 }
                 //判断输入是否正确
                 //如果目标文件或目录不存在就会报错
-                if(stat(file_path, &buffer) == -1)
+                if (stat(file_path, &buffer) == -1)
                 {
                     printf("---非法的路径名---\n");
                     continue;
                 }
                 //排除掉输入目录的情况
-                if(file_path[strlen(file_path) - 1] == '/')
+                if (file_path[strlen(file_path) - 1] == '/')
                 {
                     strcpy(temp, "---输入的是一个目录\n");
                     printf("%s\n", temp);
@@ -90,10 +89,10 @@ void *my_read(void *arg)
                 file_name = basename(file_path);
                 strcpy(buf, file_name);
                 Write(cfd, buf);
-                
+
                 //开始向服务器的文件缓冲区发送文件
                 printf("file_path = %s\n", file_path);
-                int fp = open(file_path, O_CREAT|O_RDONLY, S_IRUSR|S_IWUSR);
+                int fp = open(file_path, O_CREAT | O_RDONLY, S_IRUSR | S_IWUSR);
 
                 printf("---开始传送文件:%s---\n", buf);
                 sendfile(cfd, fp, 0, buffer.st_size);
@@ -105,9 +104,9 @@ void *my_read(void *arg)
             }
             pthread_cond_signal(&cond);
         }
-        else if(strcmp(buf, "-recv_file") == 0)
+        else if (strcmp(buf, "-recv_file") == 0)
         {
-            while(1)
+            while (1)
             {
                 //读取服务器发来的文件长度
                 Read(cfd, buf, sizeof(buf), __LINE__);
@@ -118,21 +117,21 @@ void *my_read(void *arg)
                 file_name = basename(temp);
                 //创建文件
                 FILE *fp = fopen(temp, "wb");
-                if (fp == NULL) 
+                if (fp == NULL)
                 {
                     perror("Can't open file");
                     exit(1);
                 }
-                
+
                 //把数据写入文件
                 int n;
                 int sum = 0;
                 printf("------开始接收文件<%s>------\n", file_name);
-                while((n = Read(cfd, buf, 1024, __LINE__)) > 0)
+                while ((n = Read(cfd, buf, 1024, __LINE__)) > 0)
                 {
                     fwrite(buf, sizeof(char), n, fp);
                     sum += n;
-                    if(sum >= len)
+                    if (sum >= len)
                     {
                         break;
                     }
@@ -151,13 +150,11 @@ void *my_read(void *arg)
     return NULL;
 }
 
-
-
 int main(int argc, char **argv)
 {
     signal(SIGPIPE, SIG_IGN);
     //检查参数个数
-    if(argc != 5)
+    if (argc != 5)
     {
         printf("Usage: [-p] [serv_port] [-a] [serve_address]\n");
         exit(1);
@@ -170,12 +167,12 @@ int main(int argc, char **argv)
     // serv_addr.sin_port = htons(SERV_PORT);
     // inet_aton("127.0.0.1", &serv_addr.sin_addr);
     //从命令行的输入获取服务器端的端口与地址
-    for(i=1; i<argc; i++)
+    for (i = 1; i < argc; i++)
     {
-        if(strcmp(argv[i], "-p") == 0)
+        if (strcmp(argv[i], "-p") == 0)
         {
-            serv_port = atoi(argv[i+1]);
-            if(serv_port < 0 || serv_port > 65535)
+            serv_port = atoi(argv[i + 1]);
+            if (serv_port < 0 || serv_port > 65535)
             {
                 printf("Invalid serv_addr.sin_port\n");
                 exit(1);
@@ -187,9 +184,9 @@ int main(int argc, char **argv)
             continue;
         }
 
-        if(strcmp(argv[i], "-a") == 0)
+        if (strcmp(argv[i], "-a") == 0)
         {
-            if(inet_aton(argv[i+1], &serv_addr.sin_addr) == 0)
+            if (inet_aton(argv[i + 1], &serv_addr.sin_addr) == 0)
             {
                 printf("Invalid server ip address\n");
                 exit(1);
@@ -206,20 +203,18 @@ int main(int argc, char **argv)
     pthread_cond_init(&cond, NULL);
 
     cfd = socket(AF_INET, SOCK_STREAM, 0);
-    if(cfd == -1)
+    if (cfd == -1)
         my_err("socket error", __LINE__);
 
-    if(connect(cfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) == -1)
+    if (connect(cfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) == -1)
         my_err("connect error", __LINE__);
-    
 
     pthread_t wthid, rthid;
 
-    if(pthread_create(&wthid, NULL, my_write, (void *)&cfd) == -1)
+    if (pthread_create(&wthid, NULL, my_write, (void *)&cfd) == -1)
         my_err("pthread_create error", __LINE__);
-    if(pthread_create(&rthid, NULL, my_read, (void *)&cfd) == -1)
+    if (pthread_create(&rthid, NULL, my_read, (void *)&cfd) == -1)
         my_err("pthread_create error", __LINE__);
-
 
     pthread_join(wthid, NULL);
     pthread_join(rthid, NULL);

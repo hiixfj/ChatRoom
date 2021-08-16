@@ -1,0 +1,5 @@
+BasedOnStyle: google
+IndentWidth: 4
+SortIncludes: false
+ColumnLimit: 0
+BreakBeforeBraces: Allman

@@ -42,10 +42,6 @@ void Sendfile(FILE *fp, int sockfd);
 
 void Writefile(int sockfd, FILE *fp);
 
-
-
-
-
 //
 //打印类函数
 //
@@ -68,14 +64,12 @@ void client_interface();
 //好友界面函数
 void friends_interface();
 
-
 //
 //错误处理类函数
 //
 void Write(int fd, const char *buf);
 //read之前清空缓冲区buf
 int Read(int fd, char *buf, size_t count, int line);
-
 
 //
 //实用类函数
@@ -89,9 +83,7 @@ void judge_userinfo(int fd, const char *string);
 //解析客户端发来的请求,并把请求转化为整数
 int parse_request(char *request);
 
-
 void my_err(const char *str, const int line);
-
 
 //
 //mysql类函数
