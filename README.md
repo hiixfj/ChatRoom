@@ -35,8 +35,10 @@ epoll_LT模式架构实现聊天室
 
 ### 关于mysql数据库
   **请务必在使用前更改成自己的MYSQL**
-  有关服务器的设置在**server.c**文件的**line:46**
-  **请手动建库"testdb":**create database testdb default charset=utf8;
+  有关服务器的设置在**server.c**文件的**line:46**<br>
+  **请手动建库"testdb":** 
+  
+    create database testdb default charset=utf8;
 
 ### 关于文件传送功能
   **服务器**的文件暂存地址为：  **./../file_buf/**
