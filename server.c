@@ -56,6 +56,65 @@ int main()
     }
     printf("1. Connected MySQL successful! \n");
 
+    /*
+    *
+    *   启动服务器之后，先检测mysql指定的库中有没有必备表
+    *     
+    */
+    int a[3];
+    memset(a, 0, sizeof(a));
+    query_str = "show tables;";
+    MY_real_query(&mysql, query_str, strlen(query_str), __LINE__);
+    res = mysql_store_result(&mysql);
+    if (res == NULL)
+        my_err("mysql_store_result error", __LINE__);
+    while (row = mysql_fetch_row(res))
+    {
+        if (strcmp(row[0], "UserData") == 0)
+        {
+            a[0] = 1;
+        } 
+        else if (strcmp(row[0], "HisData") == 0)
+        {
+            a[1] = 1;
+        }
+        else if (strcmp(row[0], "OffLineMes") == 0)
+        {
+            a[2] = 1;
+        }
+    }
+    for (int i=0; i<3; i++)
+    {
+        if(a[i] == 0)
+        {
+            switch (i)
+            {
+            case 0:
+                query_str = "create table UserData \
+                (username varchar(20), password varchar(20), nickname varchar(20), mibao varchar(20), \
+                num double, status double, cfd double, newsnum double)";
+                MY_real_query(&mysql, query_str, strlen(query_str), __LINE__);
+                break;
+            
+            case 1:
+                query_str = "create table HisData \
+                (time varchar(100), inuser varchar(20), touser varchar(20), infor varchar(200))";
+                MY_real_query(&mysql, query_str, strlen(query_str), __LINE__);
+                break;
+
+            case 2:
+                query_str = "create table OffLineMes \
+                (time varchar(100), inuser varchar(20), touser varchar(20), infor varchar(200), type double)";
+                MY_real_query(&mysql, query_str, strlen(query_str), __LINE__);
+                break;
+
+            default:
+                break;
+            }
+        }
+    }
+
+
     query_str = "select * from UserData";
     rc = mysql_real_query(&mysql, query_str, strlen(query_str));
     if(rc != 0)
